@@ -176,7 +176,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = PeekMessageRequest(self.queue_name)
+        req = PeekMessageRequest(self.queue_name, self.encoding)
         req.set_req_info(req_info)
         resp = PeekMessageResponse()
         self.mns_client.peek_message(req, resp)
@@ -200,7 +200,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = BatchPeekMessageRequest(self.queue_name, batch_size)
+        req = BatchPeekMessageRequest(self.queue_name, batch_size, self.encoding)
         req.set_req_info(req_info)
         resp = BatchPeekMessageResponse()
         self.mns_client.batch_peek_message(req, resp)
