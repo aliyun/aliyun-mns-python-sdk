@@ -152,6 +152,9 @@ except MNSExceptionBase as e:
     sys.stderr.write("Send Message Fail!\nException:%s\n\n" % e)
     sys.exit(1)
 
+# 在消息延迟之后开始查看，否则查看不到消息
+time.sleep(6)
+
 #查看消息
 ## 返回如下属性：
 ## MessageId            消息编号
@@ -161,8 +164,9 @@ except MNSExceptionBase as e:
 ## EnqueueTime          消息发送到队列的时间，单位：毫秒
 ## FirstDequeueTime     消息第一次被消费的时间，单位：毫秒
 ## Priority             消息的优先级
+## peek_message 返回字节串，peek_message_with_str_body 返回字符串
 try:
-    peek_msg = my_queue.peek_message()
+    peek_msg = my_queue.peek_message_with_str_body()
     sys.stdout.write("Peek Message Succeed! \
                       \nMessageId: %s\nMessageBodyMD5: %s \
                       \nMessageBody: %s\nDequeueCount: %s \
@@ -180,10 +184,11 @@ except MNSExceptionBase as e:
 ## 返回属性和查看消息基本相同，增加NextVisibleTime和ReceiptHandle
 ## NextVisibleTime      消息下次可被消费的时间，单位：毫秒
 ## ReceiptHandle        本次消费消息产生的临时句柄，用于删除或修改处于Inactive的消息，NextVisibleTime之前有效
+## receive_message 返回字节串，receive_message_with_str_body 返回字符串
 recv_msg = None
 try:
     wait_seconds = 10
-    recv_msg = my_queue.receive_message(wait_seconds)
+    recv_msg = my_queue.receive_message_with_str_body(wait_seconds)
     sys.stdout.write("Receive Message Succeed! \
                       \nMessageId: %s\nMessageBodyMD5: %s \
                       \nMessageBody: %s\nDequeueCount: %s \
@@ -235,21 +240,22 @@ for i in range(msg_cnt):
     messages.append(msg)
 try:
     send_msgs = my_queue.batch_send_message(messages)
-    sys.stdout.write("Batch Send Message Succeed.")
+    sys.stdout.write("Batch Send Message Succeed.\n")
     for msg in send_msgs:
         sys.stdout.write("MessageId:%s\nMessageBodyMd5:%s\n\n" % (msg.message_id, msg.message_body_md5))
 except MNSExceptionBase as e:
     sys.stderr.write("Batch Send Message Fail!\nException:%s\n\n" % e)
     sys.exit(1)
 
-time.sleep(5)
+time.sleep(6)
 
 #批量查看消息
 ## batch_size   指定批量获取的消息数
 ## 返回多条消息的属性，每条消息属性和peek_message相同
+## batch_peek_message 返回字节串，batch_peek_message_with_str_body 返回字符串
 try:
     batch_size = 3
-    peek_msgs = my_queue.batch_peek_message(batch_size)
+    peek_msgs = my_queue.batch_peek_message_with_str_body(batch_size)
     sys.stdout.write("Batch Peek Message Succeed.\n")
     for msg in peek_msgs:
         sys.stdout.write("MessageId: %s\nMessageBodyMD5: %s \
@@ -267,11 +273,12 @@ except MNSExceptionBase as e:
 ## batch_size 指定批量获取的消息数
 ## wait_seconds 指定长轮询时间，单位：秒
 ## 返回多条消息的属性，每条消息属性和receive_message相同
+## batch_receive_message 返回字节串，batch_receive_message_with_str_body 返回字符串
 recv_msgs = []
 try:
     batch_size = 3
     wait_seconds = 10
-    recv_msgs = my_queue.batch_receive_message(batch_size, wait_seconds)
+    recv_msgs = my_queue.batch_receive_message_with_str_body(batch_size, wait_seconds)
     sys.stdout.write("Batch Receive Message Succeed.\n")
     for msg in recv_msgs:
         sys.stdout.write("MessageId: %s\nMessageBodyMD5: %s \
@@ -436,9 +443,17 @@ msg_tag = "important"
 message = TopicMessage(msg_body, msg_tag)
 try:
     re_msg = my_topic.publish_message(message)
-    sys.stdout.write("Publish Message Succeed.\nMessageBody:%s\nMessageTag:%s\nMessageId:%s\nMessageBodyMd5:%s\n\n" % (msg_body, msg_tag, re_msg.message_id, re_msg.message_body_md5))
+    sys.stdout.write("Publish Raw Message Succeed.\nMessageBody:%s\nMessageTag:%s\nMessageId:%s\nMessageBodyMd5:%s\n\n" % (msg_body, msg_tag, re_msg.message_id, re_msg.message_body_md5))
 except MNSExceptionBase as e:
-    sys.stderr.write("Publish Message Fail!\nException:%s\n\n" % e)
+    sys.stderr.write("Publish Raw Message Fail!\nException:%s\n\n" % e)
+    sys.exit(1)
+
+message = Base64TopicMessage(msg_body, msg_tag)
+try:
+    re_msg = my_topic.publish_message(message)
+    sys.stdout.write("Publish Base64 encoded Message Succeed.\nMessageBody:%s\nMessageTag:%s\nMessageId:%s\nMessageBodyMd5:%s\n\n" % (msg_body, msg_tag, re_msg.message_id, re_msg.message_body_md5))
+except MNSExceptionBase as e:
+    sys.stderr.write("Publish Base64 encoded Message Fail!\nException:%s\n\n" % e)
     sys.exit(1)
 
 sys.stdout.write("PASS ALL!!\n\n")
