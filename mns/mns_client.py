@@ -734,8 +734,8 @@ class MNSClient(object):
         req_inter.header["x-mns-version"] = self.version
         req_inter.header["host"] = self.host
         req_inter.header["date"] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
-        req_inter.header["user-agent"] = "aliyun-sdk-python/%s(%s/%s;%s)" % \
-                                         (pkg_info.version, platform.system(), platform.release(), platform.python_version())
+        req_inter.header["user-agent"] = "aliyun-sdk-python/%s(%s/%s/%s/%s)" % \
+                                         (pkg_info.version, platform.system(), platform.release(), platform.machine(), platform.python_version())
         req_inter.header["Authorization"] = self.get_signature(req_inter.method, req_inter.header, req_inter.uri)
         if self.security_token != "":
             req_inter.header["security-token"] = self.security_token
