@@ -126,7 +126,7 @@ class MessageEncoder(EncoderBase):
             msgbody = base64.b64encode(tmpbody).decode('utf-8')
         else:
             #xml only support unicode when contains Chinese
-            if sys.version > '3':
+            if sys.version_info.major >= 3:
                 msgbody = data.message_body
             else:
                 msgbody = data.message_body.decode('utf-8') if isinstance(data.message_body, str) else data.message_body
@@ -148,7 +148,7 @@ class MessagesEncoder:
                 msgbody = base64.b64encode(tmpbody).decode('utf-8')
             else:
                 #xml only support unicode when contains Chinese
-                if sys.version > '3':
+                if sys.version_info.major >= 3:
                     msgbody = msg.message_body
                 else:
                     msgbody = msg.message_body.decode('utf-8') if isinstance(msg.message_body, str) else msg.message_body
@@ -212,7 +212,7 @@ class DecoderBase:
             raise MNSClientNetworkException("RespDataDamaged", "Xml data is \"\"!")
 
         try:
-            if (sys.version < '3') & (not isinstance(xml_data, str)):
+            if (sys.version_info.major < 3) & (not isinstance(xml_data, str)):
                 xml_data = xml_data.encode('utf-8')
             dom = xml.dom.minidom.parseString(xml_data)
         except Exception:
@@ -248,7 +248,7 @@ class DecoderBase:
                     if property.nodeName != "#text" and property.childNodes != []:
                         data_dic[property.nodeName] = property.firstChild.data
                 data_listofdic.append(data_dic)
-        except MNSClientNetworkException:
+        except MNSClientNetworkException as e:
             raise MNSClientNetworkException(e.type, e.message, req_id)
 
 class ListQueueDecoder(DecoderBase):
