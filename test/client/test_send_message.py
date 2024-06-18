@@ -1,3 +1,4 @@
+# coding=utf-8
 import unittest
 
 from mns.mns_xml_handler import *
@@ -7,7 +8,7 @@ class SendMessageTest(unittest.TestCase):
 
     def test_send_base64_message(self):
         # 构建 request, 模拟 进行base64编码 时, send_message 对于 消息体 的 encode()结果
-        message_body = "I am 测试字符串."
+        message_body = u"I am 测试字符串."
         queue_name = "test_queue"
         req = SendMessageRequest(queue_name, message_body, base64encode=True)
         # 生成 发送请求的请求体
@@ -20,7 +21,7 @@ class SendMessageTest(unittest.TestCase):
 
     def test_send_raw_message(self):
         # 构建 request, 模拟 不进行base64编码 时, send_message 对于 消息体 的 encode()结果
-        message_body = "I am 测试字符串."
+        message_body = u"I am 测试字符串."
         queue_name = "test_queue"
         req = SendMessageRequest(queue_name, message_body, base64encode=False)
         # 生成 发送请求的请求体

@@ -1,3 +1,4 @@
+# coding=utf-8
 import base64
 import unittest
 
@@ -7,7 +8,7 @@ from mns.topic import TopicMessage, Base64TopicMessage
 class TestTopicMessageBase64(unittest.TestCase):
 
     def test_message(self):
-        message_body = "test 字符串"
+        message_body = u"test 字符串"
         topic_message = TopicMessage(message_body)
         base64_message = Base64TopicMessage(message_body)
         # 验证消息体是否正确设置, 消息体为 原值

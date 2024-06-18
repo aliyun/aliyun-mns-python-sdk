@@ -40,12 +40,13 @@ while True:
         print("Receive Message Succeed! ReceiptHandle:%s MessageBody:%s MessageID:%s" % (recv_msg.receipt_handle, recv_msg.message_body, recv_msg.message_id))
     except Exception as e:
     #except MNSServerException as e:
-        if e.type == u"QueueNotExist":
-            print("Queue not exist, please create queue before receive message.")
-            sys.exit(0)
-        elif e.type == u"MessageNotExist":
-            print("Queue is empty!")
-            sys.exit(0)
+        if hasattr(e, 'type'):
+            if e.type == u"QueueNotExist":
+                print("Queue not exist, please create queue before receive message.")
+                sys.exit(0)
+            elif e.type == u"MessageNotExist":
+                print("Queue is empty!")
+                sys.exit(0)
         print("Receive Message Fail! Exception:%s\n" % e)
         continue
 

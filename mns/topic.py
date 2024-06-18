@@ -234,7 +234,7 @@ class TopicMeta:
                      "LoggingEnabled": self.logging_enabled}
         return "\n".join(["%s: %s" % (k.ljust(30),v) for k,v in meta_info.items()])
 
-class TopicMessage:
+class TopicMessage(object):
     def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None):
         """ Specify information of TopicMessage
 
