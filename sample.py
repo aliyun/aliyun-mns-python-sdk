@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #coding=utf8
 # Copyright (C) 2015, Alibaba Cloud Computing
-
 #Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 #The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
@@ -9,6 +8,7 @@
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import sys
+import os
 import time
 from mns.account import Account
 from mns.queue import *
@@ -20,14 +20,13 @@ except ImportError:
     import ConfigParser as ConfigParser
 
 cfgFN = "sample.cfg"
-required_ops = [("Base", "AccessKeyId"), ("Base", "AccessKeySecret"), ("Base", "Endpoint")]
-optional_ops = [("Optional", "SecurityToken")]
+required_ops = [("Base", "Endpoint")]
 
 parser = ConfigParser.ConfigParser()
 parser.read(cfgFN)
-for sec,op in required_ops:
+for sec, op in required_ops:
     if not parser.has_option(sec, op):
-        sys.stderr.write("ERROR: need (%s, %s) in %s.\n" % (sec,op,cfgFN))
+        sys.stderr.write("ERROR: need (%s, %s) in %s.\n" % (sec, op, cfgFN))
         sys.stderr.write("Read README to get help inforamtion.\n")
         sys.exit(1)
 
@@ -35,13 +34,11 @@ for sec,op in required_ops:
 ## AccessKeyId      阿里云官网获取
 ## AccessKeySecret  阿里云官网获取
 ## Endpoint         阿里云消息和通知服务官网获取, Example: http://$AccountId.mns.cn-hangzhou.aliyuncs.com
-## WARNING： Please do not hard code your accessId and accesskey in next line.(more information: https://yq.aliyun.com/articles/55947)
-accessKeyId = parser.get("Base", "AccessKeyId")
-accessKeySecret = parser.get("Base", "AccessKeySecret")
+## WARNING： Please do not hard code your accessId and accesskey in next line.(more information see README)
+accessKeyId = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+accessKeySecret = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+securityToken = os.getenv("ALIBABA_CLOUD_ACCESS_SECURITY_TOKEN") or ""
 endpoint = parser.get("Base", "Endpoint")
-securityToken = ""
-if parser.has_option("Optional", "SecurityToken") and parser.get("Optional", "SecurityToken") != "$SecurityToken":
-    securityToken = parser.get("Optional", "SecurityToken")
 
 
 #初始化my_account
