@@ -212,7 +212,7 @@ class DecoderBase:
             raise MNSClientNetworkException("RespDataDamaged", "Xml data is \"\"!")
 
         try:
-            if (sys.version_info.major < 3) & (not isinstance(xml_data, str)):
+            if (sys.version_info.major < 3) and (not isinstance(xml_data, str)):
                 xml_data = xml_data.encode('utf-8')
             dom = xml.dom.minidom.parseString(xml_data)
         except Exception:
