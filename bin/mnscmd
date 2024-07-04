@@ -41,8 +41,8 @@ QUEUE_CMD_LIST = [
             ["getqueueattr"        , "getqueueattr --queuename=xxx"],
             ["deletequeue"         , "deletequeue --queuename=xxx"],
             ["sendmessage"         , "sendmessage --queuename=xxx --body=xxx [--delaysec=xxx --priority=xxx --base64=False]"],
-            ["receivemessage"      , "receivemessage --queuename=xxx [--waitsec=xxx --base64=False]"],
-            ["peekmessage"         , "peekmessage --queuename=xxx"],
+            ["receivemessage"      , "receivemessage --queuename=xxx [--waitsec=xxx --base64=False --string==False]"],
+            ["peekmessage"         , "peekmessage --queuename=xxx [--base64=False --string==False]"],
             ["deletemessage"       , "deletemessage --queuename=xxx --handle=xxx"],
             ["changevisibility"    , "changevisibility --queuename=xxx --handle=xxx --vistimeout=xxx"]]
 
@@ -52,7 +52,7 @@ TOPIC_CMD_LIST = [
             ["settopicattr"        , "settopicattr --topicname=xxx [--maxmsgsize=xxx] [--loggingenabled=True/False]"],
             ["gettopicattr"        , "gettopicattr --topicname=xxx"],
             ["deletetopic"         , "deletetopic --topicname=xxx"],
-            ["publishmessage"      , "publishmessage --topicname=xxx --body=xxx [--messagetag=xxx]"],
+            ["publishmessage"      , "publishmessage --topicname=xxx --body=xxx [--messagetag=xxx --base64=False]"],
             ["listsub"             , "listsub --topicname=xxx [--prefix=xxx] [--retnum=xxx] [--marker=xxx]"],
             ["subscribe"           , "subscribe --topicname=xxx --subname=xxx --endpoint=xxx [--filtertag=xxx] [--notifystrategy=xxx|BACKOFF_RETRY/EXPONENTIAL_DECAY_RETRY] [--notifycontentformat=xxx|XML/SIMPLIFIED/JSON]"],
             ["setsubattr"          , "setsubattr --topicname=xxx --subname=xxx [--notifystrategy=xxx|BACKOFF_RETRY/EXPONENTIAL_DECAY_RETRY]"],
@@ -216,7 +216,11 @@ class MNSCmd:
         wait_seconds = -1 if options.waitsec is None else options.waitsec
 
         try:
-            rmsg = queue.receive_message(wait_seconds)
+            if options.string and options.string.lower() == "true":
+                rmsg = queue.receive_message_with_str_body(wait_seconds)
+            else:
+                rmsg = queue.receive_message(wait_seconds)
+
             MNSCmd.cmd_succeed(args[0])
             MNSCmd.print_attr({ "MessageBody"       : rmsg.message_body,
                                 "MessageID"         : rmsg.message_id,
@@ -233,9 +237,15 @@ class MNSCmd:
     def peekmessage(self, args, options):
         MNSCmd.miss_parameters(options.queuename is None, args)
         queue = self.account.get_queue(options.queuename)
+        if options.base64 and options.base64.lower() == "false":
+            queue.set_encoding(False)
 
         try:
-            rmsg = queue.peek_message()
+            if options.string and options.string.lower() == "true":
+                rmsg = queue.peek_message_with_str_body()
+            else:
+                rmsg = queue.peek_message()
+
             MNSCmd.cmd_succeed(args[0])
             MNSCmd.print_attr({ "MessageBody"       : rmsg.message_body,
                                 "MessageID"         : rmsg.message_id,
@@ -336,7 +346,11 @@ class MNSCmd:
     def publishmessage(self, args, options):
         MNSCmd.miss_parameters((options.topicname is None or options.body is None), args)
         topic = self.account.get_topic(options.topicname)
-        message = TopicMessage(options.body, "" if options.messagetag is None else options.messagetag)
+
+        if options.base64 and options.base64.lower() == "true":
+            message = Base64TopicMessage(options.body, "" if options.messagetag is None else options.messagetag)
+        else:
+            message = TopicMessage(options.body, "" if options.messagetag is None else options.messagetag)
 
         try:
             rmsg = topic.publish_message(message)
@@ -515,6 +529,7 @@ if __name__ == "__main__":
     parser.add_option("-l", "--loggingenabled", dest="loggingenabled", help="specify LoggingEnabled, value: True/False")
     parser.add_option("-L", "--loggingbucket", dest="loggingbucket", help="specify logging bucket")
     parser.add_option("-B", "--base64", dest="base64", help="base64 decode or encode when send or receive message , value: True/False, default: True")
+    parser.add_option("-x", "--string", dest="string", help="receive or peek the message body as string , value: True/False, default: False")
 
     (options, args) = parser.parse_args()
     if (len(args)) < 1:

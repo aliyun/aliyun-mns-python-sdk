@@ -34,16 +34,19 @@ print("%sReceive And Delete Message From Queue%s\nQueueName:%s\nWaitSeconds:%s\n
 while True:
     #读取消息
     try:
-        recv_msg = my_queue.receive_message(wait_seconds)
+        # receive_message 返回字节串，receive_message_with_str_body 返回字符串
+        # recv_msg = my_queue.receive_message(wait_seconds)
+        recv_msg = my_queue.receive_message_with_str_body(wait_seconds)
         print("Receive Message Succeed! ReceiptHandle:%s MessageBody:%s MessageID:%s" % (recv_msg.receipt_handle, recv_msg.message_body, recv_msg.message_id))
     except Exception as e:
     #except MNSServerException as e:
-        if e.type == u"QueueNotExist":
-            print("Queue not exist, please create queue before receive message.")
-            sys.exit(0)
-        elif e.type == u"MessageNotExist":
-            print("Queue is empty!")
-            sys.exit(0)
+        if hasattr(e, 'type'):
+            if e.type == u"QueueNotExist":
+                print("Queue not exist, please create queue before receive message.")
+                sys.exit(0)
+            elif e.type == u"MessageNotExist":
+                print("Queue is empty!")
+                sys.exit(0)
         print("Receive Message Fail! Exception:%s\n" % e)
         continue
 

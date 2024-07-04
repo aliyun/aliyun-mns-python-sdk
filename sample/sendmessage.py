@@ -25,7 +25,7 @@ msg_count = 3
 print("%sSend Message To Queue%s\nQueueName:%s\nMessageCount:%s\n" % (10*"=", 10*"=", queue_name, msg_count))
 for i in range(msg_count):
     try:
-        msg_body = "I am test message %s." % i
+        msg_body = u"I am test message %s." % i
         msg = Message(msg_body)
         re_msg = my_queue.send_message(msg)
         print("Send Message Succeed! MessageBody:%s MessageID:%s ReceiptHandle:%s" % (msg_body, re_msg.message_id, re_msg.receipt_handle))

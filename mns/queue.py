@@ -163,7 +163,7 @@ class Queue:
         return self.__batchsend_resp2msg__(resp)
 
     def peek_message(self, req_info=None):
-        """ 查看消息
+        """ 查看消息 消息体为字节串
 
             @type req_info: RequestInfo object
             @param req_info: 透传到MNS的请求信息
@@ -176,15 +176,35 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = PeekMessageRequest(self.queue_name)
+        req = PeekMessageRequest(self.queue_name, self.encoding)
         req.set_req_info(req_info)
         resp = PeekMessageResponse()
         self.mns_client.peek_message(req, resp)
         self.debuginfo(resp)
         return self.__peek_resp2msg__(resp)
 
+    def peek_message_with_str_body(self, req_info=None):
+        """ 查看消息 消息体为字符串
+
+            @type req_info: RequestInfo object
+            @param req_info: 透传到MNS的请求信息
+
+            @rtype: Message object
+            @return: Message object中包含消息的基本属性
+
+            @note: Exception
+            :: MNSClientParameterException  参数格式异常
+            :: MNSClientNetworkException    网络异常
+            :: MNSServerException           mns处理异常
+        """
+        message = self.peek_message(req_info)
+        if self.encoding:
+            message.message_body = message.message_body.decode("utf-8")
+
+        return message
+
     def batch_peek_message(self, batch_size, req_info=None):
-        """ 批量查看消息
+        """ 批量查看消息 消息体为字节串
             
             @type batch_size: int
             @param batch_size: 本次请求最多获取的消息条数
@@ -200,15 +220,39 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = BatchPeekMessageRequest(self.queue_name, batch_size)
+        req = BatchPeekMessageRequest(self.queue_name, batch_size, self.encoding)
         req.set_req_info(req_info)
         resp = BatchPeekMessageResponse()
         self.mns_client.batch_peek_message(req, resp)
         self.debuginfo(resp)
         return self.__batchpeek_resp2msg__(resp)
 
+    def batch_peek_message_with_str_body(self, batch_size, req_info=None):
+        """ 批量查看消息 消息体为字符串
+
+            @type batch_size: int
+            @param batch_size: 本次请求最多获取的消息条数
+
+            @type req_info: RequestInfo object
+            @param req_info: 透传到MNS的请求信息
+
+            @rtype: list of Message object
+            @return 多条消息的属性，包含消息的基本属性
+
+            @note: Exception
+            :: MNSClientParameterException  参数格式异常
+            :: MNSClientNetworkException    网络异常
+            :: MNSServerException           mns处理异常
+        """
+        msg_list = self.batch_peek_message(batch_size, req_info)
+        if self.encoding:
+            for message in msg_list:
+                message.message_body = message.message_body.decode("utf-8")
+
+        return msg_list
+
     def receive_message(self, wait_seconds = -1, req_info=None):
-        """ 消费消息
+        """ 消费消息 消息体为字节串
 
             @type wait_seconds: int
             @param wait_seconds: 本次请求的长轮询时间，单位：秒
@@ -230,9 +274,32 @@ class Queue:
         self.mns_client.receive_message(req, resp)
         self.debuginfo(resp)
         return self.__recv_resp2msg__(resp)
+
+    def receive_message_with_str_body(self, wait_seconds = -1, req_info=None):
+        """ 消费消息 消息体为字符串
+
+            @type wait_seconds: int
+            @param wait_seconds: 本次请求的长轮询时间，单位：秒
+
+            @type req_info: RequestInfo object
+            @param req_info: 透传到MNS的请求信息
+
+            @rtype: Message object
+            @return Message object中包含基本属性、下次可消费时间和临时句柄
+
+            @note: Exception
+            :: MNSClientParameterException  参数格式异常
+            :: MNSClientNetworkException    网络异常
+            :: MNSServerException           mns处理异常
+        """
+        message = self.receive_message(wait_seconds, req_info)
+        if self.encoding:
+            message.message_body = message.message_body.decode("utf-8")
+
+        return message
    
     def batch_receive_message(self, batch_size, wait_seconds = -1, req_info=None):
-        """ 批量消费消息
+        """ 批量消费消息 消息体为字节串
 
             @type batch_size: int
             @param batch_size: 本次请求最多获取的消息条数
@@ -257,6 +324,33 @@ class Queue:
         self.mns_client.batch_receive_message(req, resp)
         self.debuginfo(resp)
         return self.__batchrecv_resp2msg__(resp)
+
+    def batch_receive_message_with_str_body(self, batch_size, wait_seconds = -1, req_info=None):
+        """ 批量消费消息 消息体为字符串
+
+            @type batch_size: int
+            @param batch_size: 本次请求最多获取的消息条数
+
+            @type wait_seconds: int
+            @param wait_seconds: 本次请求的长轮询时间，单位：秒
+
+            @type req_info: RequestInfo object
+            @param req_info: 透传到MNS的请求信息
+
+            @rtype: list of Message object
+            @return 多条消息的属性，包含消息的基本属性、下次可消费时间和临时句柄
+
+            @note: Exception
+            :: MNSClientParameterException  参数格式异常
+            :: MNSClientNetworkException    网络异常
+            :: MNSServerException           mns处理异常
+        """
+        msg_list = self.batch_receive_message(batch_size, wait_seconds, req_info)
+        if self.encoding:
+            for message in msg_list:
+                message.message_body = message.message_body.decode("utf-8")
+
+        return msg_list
 
     def delete_message(self, receipt_handle, req_info=None):
         """ 删除消息
