@@ -8,6 +8,7 @@
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import time
+import base64
 from .mns_client import MNSClient
 from .mns_request import *
 from .mns_exception import *
@@ -233,7 +234,7 @@ class TopicMeta:
                      "LoggingEnabled": self.logging_enabled}
         return "\n".join(["%s: %s" % (k.ljust(30),v) for k,v in meta_info.items()])
 
-class TopicMessage:
+class TopicMessage(object):
     def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None):
         """ Specify information of TopicMessage
 
@@ -247,6 +248,10 @@ class TopicMessage:
             :: message_id
             :: message_body_md5
         """
+        # None 处理, 避免生成 xml 数据时的 TypeError 以及 base64编码 时的 None 问题
+        if message_body is None:
+            raise MNSClientParameterException("MessageBodyInvalid", "Bad value: None, message body should not be None.")
+
         self.message_body = message_body
         self.message_tag = message_tag
         self.direct_mail = direct_mail
@@ -258,8 +263,32 @@ class TopicMessage:
     def set_messagebody(self, message_body):
         self.message_body = message_body
 
+    def get_messagebody(self):
+        return self.message_body
+
     def set_message_tag(self, message_tag):
         self.message_tag = message_tag
+
+class Base64TopicMessage(TopicMessage):
+    def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None):
+        """ Specify information of Base64TopicMessage
+
+            @note: publish_message params
+            :: message_body        string
+            :: message_tag         string, used to filter message
+            :: direct_mail         DirectMailInfo, the information of direct mail
+            :: direct_sms          DirectSMSInfo, the information of direct sms
+
+        """
+        super(Base64TopicMessage, self).__init__(message_body, message_tag, direct_mail, direct_sms)
+
+        self.message_body = base64.b64encode(self.message_body.encode("utf-8")).decode("utf-8")
+
+    def set_messagebody(self, message_body):
+        self.message_body = base64.b64encode(message_body.encode("utf-8")).decode("utf-8")
+
+    def get_messagebody(self):
+        return base64.b64decode(self.message_body.encode("utf-8")).decode("utf-8")
 
 class DirectMailInfo:
     def __init__(self, account_name, subject, address_type, is_html, reply_to_address):

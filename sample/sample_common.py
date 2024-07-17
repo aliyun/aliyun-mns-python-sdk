@@ -21,8 +21,7 @@ class MNSSampleCommon:
     @staticmethod
     def LoadConfig():
         cfg_fn = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/../sample.cfg")
-        required_ops = [("Base", "AccessKeyId"), ("Base", "AccessKeySecret"), ("Base", "Endpoint")]
-        optional_ops = [("Optional", "SecurityToken")]
+        required_ops = [("Base", "Endpoint")]
 
         parser = ConfigParser.ConfigParser()
         parser.read(cfg_fn)
@@ -32,15 +31,12 @@ class MNSSampleCommon:
                 sys.stderr.write("Read README to get help inforamtion.\n")
                 sys.exit(1)
 
-        accessKeyId = parser.get("Base", "AccessKeyId")
-        accessKeySecret = parser.get("Base", "AccessKeySecret")
+        accessKeyId = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+        accessKeySecret = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+        securityToken = os.getenv("ALIBABA_CLOUD_ACCESS_SECURITY_TOKEN") or ""
         endpoint = parser.get("Base", "Endpoint")
-        securityToken = ""
-        if parser.has_option("Optional", "SecurityToken") and parser.get("Optional", "SecurityToken") != "$SecurityToken":
-            securityToken = parser.get("Optional", "SecurityToken")
-            return accessKeyId,accessKeySecret,endpoint,securityToken
 
-        return accessKeyId,accessKeySecret,endpoint,""
+        return accessKeyId,accessKeySecret,endpoint,securityToken
 
     @staticmethod
     def LoadParam(params_num):

@@ -6,12 +6,3 @@
 
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-name = "aliyun-mns-sdk"
-version = "1.1.7"
-url = ""
-license = "MIT"
-short_description = "Aliyun Message Service Library"
-long_description = """
-    Mns provides interfaces to Aliyun Message Service.
-    mnscmd lets you do these actions: create/get/list/set/delete queue, send/receive/peek/change/delete message from/to queue, create/get/list/set/delete topic, publish message to topic, subscribe/get/list/set/unsubscribe subscription.
-"""
