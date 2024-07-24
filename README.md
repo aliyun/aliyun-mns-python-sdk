@@ -198,6 +198,15 @@ Python SDK 需要：安装 Python 2.5 及以上的版本。
 
 # ChangeHistory
 
+## 1.1.7 - 2024-07-24
+
+* 支持 Topic/Queue 模型 生产和消费，base 64 编解码可选
+* 新增 receive_message_with_str_body 等方法，支持接收消息的消息体是字符串类型。
+* 支持 [阿里云规范（AK/SK）](https://help.aliyun.com/zh/sdk/developer-reference/configure-the-alibaba-cloud-accesskey-environment-variable-on-linux-macos-and-windows-systems) 基于 env 获取
+* 修复 peek_message 时队列的 base64 编解码设置失效，始终进行 base64 解码的问题
+* 修复 python 版本兼容性问题 
+* 规范客户端版本上报规范
+
 ## 1.1.6 - 2020-11-19
 
 * 增加发送消息返回值的 ReceiptHandle 解析
