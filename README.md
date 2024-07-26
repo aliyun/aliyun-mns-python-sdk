@@ -198,7 +198,7 @@ Python SDK 需要：安装 Python 2.5 及以上的版本。
 
 # ChangeHistory
 
-## 1.1.7 - 2024-07-24
+## 1.2.0 - 2024-07-26
 
 * 支持 Topic/Queue 模型 生产和消费，base 64 编解码可选
 * 新增 receive_message_with_str_body 等方法，支持接收消息的消息体是字符串类型。
