@@ -1,6 +1,6 @@
 # Aliyun MNS Python SDK
 
-[![Github version](https://badgen.net/badge/color/1.1.7/green?label=version)](https://badgen.net/badge/color/1.1.7/green?label=version)
+[![Github version](https://badgen.net/badge/color/1.2.0/green?label=version)](https://badgen.net/badge/color/1.2.0/green?label=version)
 
 # 关于
 
