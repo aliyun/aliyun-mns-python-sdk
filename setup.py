@@ -22,8 +22,9 @@ if sys.version_info <= (2, 5):
     sys.exit(1)
 
 requires = []
-requires.append("pycrypto")
+
 if sys.version_info < (3, 0):
+    requires.append("pycrypto")
     requires.append("aliyun-python-sdk-core>=2.0.2")
 else:
     requires.append("aliyun-python-sdk-core-v3>=2.3.5")
