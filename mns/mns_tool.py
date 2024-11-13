@@ -99,34 +99,40 @@ class SetAccountAttributesValidator(ValidatorBase):
         if req.logging_bucket is not None:
             ValidatorBase.is_str(req.logging_bucket, req_id=req.request_id)
 
+
 class QueueValidator(ValidatorBase):
     @staticmethod
     def queue_validate(req):
-        #type
-        #ValidatorBase.type_validate(req.visibility_timeout, types.IntType, req_id=req.request_id)
-        #ValidatorBase.type_validate(req.maximum_message_size, types.IntType, req_id=req.request_id)
-        #ValidatorBase.type_validate(req.message_retention_period, types.IntType, req_id=req.request_id)
-        #ValidatorBase.type_validate(req.delay_seconds, types.IntType, req_id=req.request_id)
-        #ValidatorBase.type_validate(req.polling_wait_seconds, types.IntType, req_id=req.request_id)
         ValidatorBase.type_validate(req.visibility_timeout, int, req_id=req.request_id)
-        ValidatorBase.type_validate(req.maximum_message_size, int, req_id=req.request_id)
         ValidatorBase.type_validate(req.message_retention_period, int, req_id=req.request_id)
         ValidatorBase.type_validate(req.delay_seconds, int, req_id=req.request_id)
         ValidatorBase.type_validate(req.polling_wait_seconds, int, req_id=req.request_id)
 
-        #value
+        # value
         if req.visibility_timeout != -1 and req.visibility_timeout <= 0:
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%d', visibility timeout should larger than 0." % req.visibility_timeout, req.request_id)
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%d', visibility timeout should larger than 0."
+                                              % req.visibility_timeout, req.request_id)
         if req.maximum_message_size != -1 and req.maximum_message_size <= 0:
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%d', maximum message size should larger than 0." % req.maximum_message_size, req.request_id)
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%d', maximum message size should larger than 0."
+                                              % req.maximum_message_size, req.request_id)
         if req.message_retention_period != -1 and req.message_retention_period <= 0:
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%d', message retention period should larger than 0." % req.message_retention_period, req.request_id)
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%d', message retention period should larger than 0."
+                                              % req.message_retention_period, req.request_id)
         if req.delay_seconds != -1 and req.delay_seconds < 0:
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%d', delay seconds should larger than 0." % req.delay_seconds, req.request_id)
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%d', delay seconds should larger than 0."
+                                              % req.delay_seconds, req.request_id)
         if req.polling_wait_seconds != -1 and req.polling_wait_seconds < 0:
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%d', polling wait seconds should larger than 0." % req.polling_wait_seconds, req.request_id)
-        if req.logging_enabled != None and str(req.logging_enabled).lower() not in ("true", "false"):
-            raise MNSClientParameterException("QueueAttrInvalid", "Bad value: '%s', logging enabled should be True/False." % req.logging_enabled, req.request_id)
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%d', polling wait seconds should larger than 0."
+                                              % req.polling_wait_seconds, req.request_id)
+        if req.logging_enabled is not None and str(req.logging_enabled).lower() not in ("true", "false"):
+            raise MNSClientParameterException("QueueAttrInvalid",
+                                              "Bad value: '%s', logging enabled should be True/False."
+                                              % req.logging_enabled, req.request_id)
 
 class MessageValidator(ValidatorBase):
     @staticmethod

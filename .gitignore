@@ -7,3 +7,9 @@
 build
 dist
 .vs/
+venv/
+aliyun_mns_sdk.egg-info/
+
+#sample 产生的日志
+access_log*
+endpoint_log*
