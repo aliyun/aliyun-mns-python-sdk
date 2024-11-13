@@ -2,7 +2,7 @@
 # Change log
 
 ## 1.2.1 - 2024-10-11
-- 修复 Queue 模型 set_attributes 方法错误将 queue 的 maximum_message_size 置为 2KB 的问题
+- 修复 Queue 模型 set_attributes 方法错误将 queue 的属性置为默认值的问题
 - 新增 send_message_multi_thread 作为多线程下的最佳实践代码
 - 优化 sample 目录下示例文件的命名
 
