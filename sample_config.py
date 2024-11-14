@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf8
 # Copyright (C) 2015, Alibaba Cloud Computing
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -7,34 +8,31 @@
 
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
-
+import os
 import sys
 
-import mns.pkg_info
+try:
+    import configparser as ConfigParser
+except ImportError:
+    import ConfigParser as ConfigParser
 
-if sys.version_info <= (2, 5):
-    sys.stderr.write("ERROR: mns python sdk requires Python Version 2.5 or above.\n")
-    sys.stderr.write("Your Python version is {}.{}.{}.\n".format(*sys.version_info[:3]))
-    sys.exit(1)
 
-requires = ["pycryptodome"]
-if sys.version_info < (3, 0):
-    requires.append("aliyun-python-sdk-core>=2.0.2")
-else:
-    requires.append("aliyun-python-sdk-core-v3>=2.3.5")
+class MNSSampleConfig:
 
-setup(name=mns.pkg_info.name,
-      version=mns.pkg_info.version,
-      author="Aliyun MNS",
-      author_email="",
-      url=mns.pkg_info.url,
-      packages=["mns"],
-      scripts=["bin/mnscmd"],
-      install_requires=requires,
-      license=mns.pkg_info.license,
-      description=mns.pkg_info.short_description,
-      long_description=mns.pkg_info.long_description)
+    @staticmethod
+    def load_config():
+        cfg_fn = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/sample.cfg")
+        required_ops = [("Base", "Endpoint")]
+        parser = ConfigParser.ConfigParser()
+        parser.read(cfg_fn)
+        for sec, op in required_ops:
+            if not parser.has_option(sec, op):
+                sys.stderr.write("ERROR: need (%s, %s) in %s.\n" % (sec, op, cfg_fn))
+                sys.stderr.write("Read README to get help information.\n")
+                sys.exit(1)
+
+        access_key_id = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_ID")
+        access_key_secret = os.getenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+        security_token = os.getenv("ALIBABA_CLOUD_ACCESS_SECURITY_TOKEN") or ""
+        endpoint = parser.get("Base", "Endpoint")
+        return access_key_id, access_key_secret, endpoint, security_token
