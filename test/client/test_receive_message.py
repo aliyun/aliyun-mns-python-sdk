@@ -4,6 +4,7 @@ import unittest
 
 from mns.mns_xml_handler import *
 from mns.queue import *
+from mns.auth import StaticCredentialsProvider
 
 RAW_XML_DATA = u"""<?xml version="1.0" ?>
                 <Message xmlns="http://mns.aliyuncs.com/doc/v1">
@@ -68,6 +69,18 @@ class ReceiveMessageTest(unittest.TestCase):
         resp = ReceiveMessageResponse()
         data = RecvMessageDecoder.decode(RAW_XML_DATA, req.base64decode)
         MNSClient.make_recvresp(MNSClient(host, access_id, access_key), data, resp)
+        # 不进行 base64解码时，receive_message 的 decode() 结果为 原始字符串
+        self.assertEqual(message_body, resp.message_body)
+
+    def test_receive_raw_message_not_decode_with_provider(self):
+        # 构建 request, 模拟 不进行base64解码 时，receive_message 对于 原始消息体 的 decode()结果
+        # 将直接传入access_id和access_key改为credentials_provider
+        message_body = u"I am 测试字符串."
+        queue_name = "test_queue"
+        req = ReceiveMessageRequest(queue_name, False)
+        resp = ReceiveMessageResponse()
+        data = RecvMessageDecoder.decode(RAW_XML_DATA, req.base64decode)
+        MNSClient.make_recvresp(MNSClient(host, credentials_provider=StaticCredentialsProvider(access_id, access_key)), data, resp)
         # 不进行 base64解码时，receive_message 的 decode() 结果为 原始字符串
         self.assertEqual(message_body, resp.message_body)
 
