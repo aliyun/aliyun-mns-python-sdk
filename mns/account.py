@@ -13,9 +13,10 @@ from .queue import Queue
 from .topic import Topic
 from .subscription import Subscription
 from .mns_tool import MNSLogger
+from .auth import StaticCredentialsProvider
 
 class Account:
-    def __init__(self, host, access_id, access_key, security_token = "", debug=False, logger = None):
+    def __init__(self, host, access_id="", access_key="", security_token="", debug=False, logger=None, credentials_provider=None):
         """
             @type host: string
             @param host: 访问的url，例如：http://$accountid.mns.cn-hangzhou.aliyuncs.com
@@ -29,15 +30,19 @@ class Account:
             @type security_token: string
             @param security_token: 如果用户使用STS Token访问，需要提供security_token
 
+            @type credentials_provider: object
+            @param credentials_provider: 提供AK/STS Token的自定义对象, 可以使用alibabacloud_credentials提供的预定义provider
+
             @note: Exception
             :: MNSClientParameterException host格式错误
         """
-        self.access_id = access_id
-        self.access_key = access_key
-        self.security_token = security_token
+        if credentials_provider:
+            self.credentials_provider = credentials_provider
+        else:
+            self.credentials_provider = StaticCredentialsProvider(access_id, access_key, security_token)
         self.debug = debug
         self.logger = logger
-        self.mns_client = MNSClient(host, access_id, access_key, security_token = security_token, logger=self.logger)
+        self.mns_client = MNSClient(host, logger=self.logger, credentials_provider=self.credentials_provider)
 
     def set_debug(self, debug):
         self.debug = debug
@@ -56,7 +61,7 @@ class Account:
         """
         self.mns_client.close_log()
 
-    def set_client(self, host, access_id=None, access_key=None, security_token=None):
+    def set_client(self, host, access_id=None, access_key=None, security_token=None, credentials_provider=None):
         """ 设置访问的url
 
             @type host: string
@@ -71,6 +76,9 @@ class Account:
             @type security_token: string
             @param security_token: 用户使用STS Token访问，需要提供security_token；如果不再使用 STS Token，请设置为 ""
 
+            @type credentials_provider: object
+            @param credentials_provider: 提供AK/STS Token的自定义对象, 可以使用alibabacloud_credentials提供的预定义provider
+
             @note: Exception
             :: MNSClientParameterException host格式错误
         """
@@ -80,7 +88,10 @@ class Account:
             access_key = self.access_key
         if security_token is None:
             security_token = self.security_token
-        self.mns_client = MNSClient(host, access_id, access_key, security_token=security_token, logger=self.logger)
+        if credentials_provider:
+            self.mns_client = MNSClient(host, logger=self.logger, credentials_provider=credentials_provider)
+        else:
+            self.mns_client = MNSClient(host, logger=self.logger, credentials_provider=StaticCredentialsProvider(access_id, access_key, security_token))
 
     def set_attributes(self, account_meta, req_info=None):
         """ 设置Account的属性
