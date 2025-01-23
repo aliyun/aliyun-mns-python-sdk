@@ -19,6 +19,7 @@ from .mns_exception import *
 from .mns_request import *
 from .mns_tool import *
 from .mns_http import *
+from .auth import *
 
 #from mns.mns_xml_handler import *
 #from mns.mns_exception import *
@@ -34,12 +35,14 @@ URISEC_SUBSCRIPTION = "subscriptions"
 
 class MNSClient(object):
     #__metaclass__ = type
-    def __init__(self, host, access_id, access_key, version = "2015-06-06", security_token = "", logger=None):
+    def __init__(self, host, access_id="", access_key="", version="2015-06-06", security_token="",
+                 logger=None, credentials_provider=None):
         self.host, self.is_https = self.process_host(host)
-        self.access_id = access_id
-        self.access_key = access_key
+        if credentials_provider:
+            self.credentials_provider = credentials_provider
+        else:
+            self.credentials_provider = StaticCredentialsProvider(access_id, access_key, security_token)
         self.version = version
-        self.security_token = security_token
         self.logger = logger
         self.http = MNSHttp(self.host, logger=logger, is_https=self.is_https)
         if self.logger:
@@ -736,11 +739,12 @@ class MNSClient(object):
         req_inter.header["date"] = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         req_inter.header["user-agent"] = "aliyun-sdk-python/%s(%s/%s/%s;%s)" % \
                                          (pkg_info.version, platform.system(), platform.release(), platform.machine(), platform.python_version())
-        req_inter.header["Authorization"] = self.get_signature(req_inter.method, req_inter.header, req_inter.uri)
-        if self.security_token != "":
-            req_inter.header["security-token"] = self.security_token
+        credential = self.credentials_provider.get_credentials()
+        req_inter.header["Authorization"] = self.get_signature(req_inter.method, req_inter.header, req_inter.uri, credential)
+        if credential.get_security_token() != "":
+            req_inter.header["security-token"] = credential.get_security_token()
 
-    def get_signature(self,method,headers,resource):
+    def get_signature(self, method, headers, resource, credential):
         content_md5 = self.get_element('content-md5', headers)
         content_type = self.get_element('content-type', headers)
         date = self.get_element('date', headers)
@@ -756,10 +760,10 @@ class MNSClient(object):
         string_to_sign = "%s\n%s\n%s\n%s\n%s%s" % (method, content_md5, content_type, date, canonicalized_mns_headers, canonicalized_resource)
         #hmac only support str in python2.7
         #tmp_key = self.access_key.encode('utf-8') if isinstance(self.access_key, unicode) else self.access_key
-        tmp_key = self.access_key.encode('utf-8')
+        tmp_key = credential.get_access_key_secret().encode('utf-8')
         h = hmac.new(tmp_key, string_to_sign.encode('utf-8'), hashlib.sha1)
         signature = base64.b64encode(h.digest())
-        signature = "MNS " + self.access_id + ":" + signature.decode('utf-8')
+        signature = "MNS " + credential.get_access_key_id() + ":" + signature.decode('utf-8')
         return signature
 
     def get_element(self, name, container):
