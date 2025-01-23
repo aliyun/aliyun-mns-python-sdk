@@ -1,10 +1,11 @@
 # Change log
 
-## 1.2.1 - 2024-11-13
-- 修复 Queue 模型 set_attributes 方法错误将 queue 的属性置为默认值的问题
-- 新增 queue_multi_thread.py 作为多线程下的最佳实践代码
+## 1.2.1 - 2024-10-11
+
+- 修复 Queue 模型 set_attributes 方法错误将 queue 的 maximum_message_size 置为 2KB 的问题
+- 新增 send_message_multi_thread 作为多线程下的最佳实践代码
 - 优化 sample 目录下示例文件的命名
-- 去除  pycrypto-2.6.1 依赖解决 windows 平台 python3 安装报错的问题
+- 去除 pycrypto-2.6.1 依赖解决 windows 平台 python3 安装报错的问题
 
 ## 1.2.0 - 2024-07-26
 
