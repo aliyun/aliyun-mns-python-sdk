@@ -1,5 +1,9 @@
 # Change log
 
+## 1.2.2 - 2025-01-23
+
+- 支持传入自定义 credentials provider
+
 ## 1.2.1 - 2024-10-11
 
 - 修复 Queue 模型 set_attributes 方法错误将 queue 的 maximum_message_size 置为 2KB 的问题
