@@ -212,10 +212,13 @@ class MNSClient(object):
         self.check_status(req_inter, resp_inter, resp)
         if resp.error_data == "":
             queue_attr = GetQueueAttrDecoder.decode(resp_inter.data, req_inter.get_req_id())
+            # Deprecated: active_messages即将下线，将在后续版本中移除，请关注官方文档更新
             resp.active_messages = int(queue_attr["ActiveMessages"])
             resp.create_time = int(queue_attr["CreateTime"])
+            # Deprecated: delay_messages即将下线，将在后续版本中移除，请关注官方文档更新
             resp.delay_messages = int(queue_attr["DelayMessages"])
             resp.delay_seconds = int(queue_attr["DelaySeconds"])
+            # Deprecated: inactive_messages即将下线，将在后续版本中移除，请关注官方文档更新
             resp.inactive_messages = int(queue_attr["InactiveMessages"])
             resp.last_modify_time = int(queue_attr["LastModifyTime"])
             resp.maximum_message_size = int(queue_attr["MaximumMessageSize"])

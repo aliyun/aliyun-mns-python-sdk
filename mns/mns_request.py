@@ -114,10 +114,13 @@ class GetQueueAttributesRequest(RequestBase):
 class GetQueueAttributesResponse(ResponseBase):
     def __init__(self):
         ResponseBase.__init__(self)
+        # Deprecated: active_messages即将下线，将在后续版本中移除，请关注官方文档更新
         self.active_messages = -1
         self.create_time = -1
+        # Deprecated: delay_messages即将下线，将在后续版本中移除，请关注官方文档更新
         self.delay_messages = -1
         self.delay_seconds = -1
+        # Deprecated: inactive_messages即将下线，将在后续版本中移除，请关注官方文档更新
         self.inactive_messages = -1
         self.last_modify_time = -1
         self.maximum_message_size = -1

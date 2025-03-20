@@ -8,7 +8,7 @@
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import time
-from .mns_client import MNSClient
+from deprecated import deprecated
 from .mns_request import *
 from .mns_exception import *
 
@@ -434,8 +434,11 @@ class Queue:
         queue_meta.polling_wait_seconds = resp.polling_wait_seconds
         queue_meta.logging_enabled = resp.logging_enabled
 
+        # Deprecated: active_messages即将下线，将在后续版本中移除，请关注官方文档更新
         queue_meta.active_messages = resp.active_messages
+        # Deprecated: inactive_messages即将下线，将在后续版本中移除，请关注官方文档更新
         queue_meta.inactive_messages = resp.inactive_messages
+        # Deprecated: delay_messages即将下线，将在后续版本中移除，请关注官方文档更新
         queue_meta.delay_messages = resp.delay_messages
         queue_meta.create_time = resp.create_time
         queue_meta.last_modify_time = resp.last_modify_time
@@ -530,9 +533,6 @@ class QueueMeta:
             :: logging_enabled: 是否开启logging功能，如果开启MNS将该队列的日志推送到Account的logging bucket中
             
             @note: 非设置属性
-            :: active_messages: 可消费消息数，近似值
-            :: inactive_messages: 正在被消费的消息数，近似值
-            :: delay_messages: 延迟消息数，近似值
             :: create_time: queue创建时间，单位：秒 
             :: last_modify_time: 修改queue属性的最近时间，单位：秒
             :: queue_name: 队列名称
@@ -544,13 +544,43 @@ class QueueMeta:
         self.polling_wait_seconds = QueueMeta.DEFAULT_POLLING_WAIT_SECONDS if polling_wait_sec is None else polling_wait_sec
         self.logging_enabled = logging_enabled
 
-        self.active_messages = -1
-        self.inactive_messages = -1
-        self.delay_messages = -1
+        self._active_messages = -1
+        self._inactive_messages = -1
+        self._delay_messages = -1
         self.create_time = -1
         self.last_modify_time = -1
         self.queue_name = ""
+    
+    @property
+    @deprecated("active_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def active_messages(self):
+        return self._active_messages
+    
+    @active_messages.setter
+    @deprecated("active_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def active_messages(self, active_messages):
+        self._active_messages = active_messages
+    
+    @property
+    @deprecated("inactive_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def inactive_messages(self):
+        return self._inactive_messages
+    
+    @inactive_messages.setter
+    @deprecated("inactive_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def inactive_messages(self, inactive_messages):
+        self._inactive_messages = inactive_messages
 
+    @property
+    @deprecated("delay_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def delay_messages(self):
+        return self._delay_messages
+    
+    @delay_messages.setter
+    @deprecated("delay_messages即将下线，将在后续版本中移除，请关注官方文档更新")
+    def delay_messages(self, delay_messages):
+        self._delay_messages = delay_messages
+    
     def set_visibilitytimeout(self, visibility_timeout):
         self.visibility_timeout = visibility_timeout
 

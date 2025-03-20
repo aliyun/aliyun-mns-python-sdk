@@ -21,7 +21,7 @@ if sys.version_info <= (2, 5):
     sys.stderr.write("Your Python version is {}.{}.{}.\n".format(*sys.version_info[:3]))
     sys.exit(1)
 
-requires = ["pycryptodome"]
+requires = ["pycryptodome", "deprecated"]
 if sys.version_info < (3, 0):
     requires.append("aliyun-python-sdk-core>=2.0.2")
 else:
