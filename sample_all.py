@@ -76,9 +76,6 @@ except MNSExceptionBase as e:
 
 # 获取队列属性
 # 除可设置属性外，返回如下属性：
-# ActiveMessages:      可消费消息数，近似值
-# InactiveMessages：   正在被消费的消息数，近似值
-# DelayMessages：      延迟消息数，近似值
 # CreateTime：         queue创建时间，单位：秒
 # LastModifyTime：     修改queue属性的最近时间，单位：秒
 try:
@@ -86,13 +83,11 @@ try:
     sys.stdout.write("Get Queue Attributes Succeed! \
                       \nQueueName: %s\nVisibilityTimeout: %s \
                       \nMaximumMessageSize: %s\nDelaySeconds: %s \
-                      \nPollingWaitSeconds: %s\nActiveMessages: %s \
-                      \nInactiveMessages: %s\nDelayMessages: %s \
+                      \nPollingWaitSeconds: %s \
                       \nCreateTime: %s\nLastModifyTime: %s\n\n" %
                      (queue_meta.queue_name, queue_meta.visibility_timeout,
                       queue_meta.maximum_message_size, queue_meta.delay_seconds,
-                      queue_meta.polling_wait_seconds, queue_meta.active_messages,
-                      queue_meta.inactive_messages, queue_meta.delay_messages,
+                      queue_meta.polling_wait_seconds, 
                       queue_meta.create_time, queue_meta.last_modify_time))
 except MNSExceptionBase as e:
     sys.stderr.write("Get Queue Attributes Fail!\nException:%s\n\n" % e)
