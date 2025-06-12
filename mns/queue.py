@@ -11,9 +11,10 @@ import time
 from deprecated import deprecated
 from .mns_request import *
 from .mns_exception import *
+from .mns_client import MNSClient
 
 class Queue:
-    def __init__(self, queue_name, mns_client, debug=False):
+    def __init__(self, queue_name, mns_client: MNSClient, debug=False):
         self.queue_name = queue_name
         self.mns_client = mns_client
         self.set_encoding(True)
@@ -47,7 +48,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = CreateQueueRequest(self.queue_name, queue_meta.visibility_timeout, queue_meta.maximum_message_size, queue_meta.message_retention_period, queue_meta.delay_seconds, queue_meta.polling_wait_seconds, queue_meta.logging_enabled)
+        req = CreateQueueRequest(self.queue_name, queue_meta.visibility_timeout, queue_meta.maximum_message_size, queue_meta.message_retention_period, queue_meta.delay_seconds, queue_meta.polling_wait_seconds, queue_meta.logging_enabled, queue_meta.message_type)
         req.set_req_info(req_info)
         resp = CreateQueueResponse()
         self.mns_client.create_queue(req, resp)
@@ -129,7 +130,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = SendMessageRequest(self.queue_name, message.message_body, message.delay_seconds, message.priority, self.encoding)
+        req = SendMessageRequest(self.queue_name, message.message_body, message.delay_seconds, message.priority, self.encoding, message.message_group_id)
         req.set_req_info(req_info)
         resp = SendMessageResponse()
         self.mns_client.send_message(req, resp)
@@ -156,7 +157,7 @@ class Queue:
         req = BatchSendMessageRequest(self.queue_name, self.encoding)
         req.set_req_info(req_info)
         for msg in messages:
-            req.add_message(msg.message_body, msg.delay_seconds, msg.priority)
+            req.add_message(msg.message_body, msg.delay_seconds, msg.priority, msg.message_group_id)
         resp = BatchSendMessageResponse()
         self.mns_client.batch_send_message(req, resp)
         self.debuginfo(resp)
@@ -457,6 +458,7 @@ class Queue:
             msg = Message()
             msg.message_id = entry.message_id
             msg.message_body_md5 = entry.message_body_md5
+            msg.message_group_id = entry.message_group_id
             msg_list.append(msg)
         return msg_list
 
@@ -489,6 +491,7 @@ class Queue:
         msg = self.__peek_resp2msg__(resp)
         msg.receipt_handle = resp.receipt_handle
         msg.next_visible_time = resp.next_visible_time
+        msg.message_group_id = resp.message_group_id
         return msg
 
     def __batchrecv_resp2msg__(self, resp):
@@ -504,6 +507,7 @@ class Queue:
             msg.priority = entry.priority
             msg.next_visible_time = entry.next_visible_time
             msg.receipt_handle = entry.receipt_handle
+            msg.message_group_id = entry.message_group_id
             msg_list.append(msg)
         return msg_list
 
@@ -522,7 +526,8 @@ class QueueMeta:
     DEFAULT_POLLING_WAIT_SECONDS = -1
 
     def __init__(self, vis_timeout=None, max_msg_size=None, msg_ttl=None,
-                 delay_sec=None, polling_wait_sec=None, logging_enabled=None):
+                 delay_sec=None, polling_wait_sec=None, logging_enabled=None,
+                 message_type=None):
         """ 队列属性
             @note: 设置属性
             :: visibility_timeout: message被receive后，持续不可消费的时间, 单位：秒
@@ -531,6 +536,7 @@ class QueueMeta:
             :: delay_seconds: 新message可消费的默认延迟时间，单位：秒
             :: polling_wait_seconds: receive message时，长轮询时间，单位：秒
             :: logging_enabled: 是否开启logging功能，如果开启MNS将该队列的日志推送到Account的logging bucket中
+            :: message_type: 消息类型，0表示normal，1表示fifo
             
             @note: 非设置属性
             :: create_time: queue创建时间，单位：秒 
@@ -550,6 +556,7 @@ class QueueMeta:
         self.create_time = -1
         self.last_modify_time = -1
         self.queue_name = ""
+        self.message_type = message_type
     
     @property
     @deprecated("active_messages即将下线，将在后续版本中移除，请关注官方文档更新")
@@ -598,6 +605,13 @@ class QueueMeta:
 
     def set_logging_enabled(self, logging_enabled):
         self.logging_enabled = logging_enabled
+    
+    def set_message_type(self, message_type):
+        """设置消息类型
+        @type message_type: int
+        @param message_type: 消息类型，0表示normal，1表示fifo
+        """
+        self.message_type = message_type
 
     def __str__(self):
         meta_info = {"VisibilityTimeout": self.visibility_timeout,
@@ -611,18 +625,20 @@ class QueueMeta:
                      "CreateTime": time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(self.create_time)),
                      "LastModifyTime": time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(self.last_modify_time)),
                      "QueueName": self.queue_name,
-                     "LoggingEnabled": self.logging_enabled}
+                     "LoggingEnabled": self.logging_enabled,
+                     "MessageType": self.message_type}
         return "\n".join(["%s: %s" % (k.ljust(30), v) for k, v in meta_info.items()])
 
 
 class Message:
-    def __init__(self, message_body = None, delay_seconds = None, priority = None):
+    def __init__(self, message_body = None, delay_seconds = None, priority = None, message_group_id = ""):
         """ 消息属性
 
             @note: send_message 指定属性
             :: message_body         消息体 
             :: delay_seconds        消息延迟时间
             :: priority             消息优先级
+            :: messageGroupId       消息组ID，FIFO队列使用
 
             @note: send_message 返回属性
             :: message_id           消息编号
@@ -657,6 +673,7 @@ class Message:
 
         self.receipt_handle = ""
         self.next_visible_time = 1
+        self.message_group_id = message_group_id
 
     def set_delayseconds(self, delay_seconds):
         self.delay_seconds = delay_seconds
@@ -664,3 +681,10 @@ class Message:
     def set_priority(self, priority):
         self.priority = priority
 
+    def set_message_group_id(self, message_group_id):
+        """ 设置消息组ID，仅FIFO队列使用
+
+            @type message_group_id: string
+            @param message_group_id: 消息组ID
+        """
+        self.message_group_id = message_group_id

@@ -47,7 +47,7 @@ class GetAccountAttributesResponse(ResponseBase):
         self.logging_bucket = ""
 
 class CreateQueueRequest(RequestBase):
-    def __init__(self, queue_name, visibility_timeout = -1, maximum_message_size = -1, message_retention_period = -1, delay_seconds = -1, polling_wait_seconds = -1, logging_enabled = None):
+    def __init__(self, queue_name, visibility_timeout = -1, maximum_message_size = -1, message_retention_period = -1, delay_seconds = -1, polling_wait_seconds = -1, logging_enabled = None, message_type = None):
         RequestBase.__init__(self)
         self.queue_name = queue_name
         self.visibility_timeout = visibility_timeout
@@ -56,6 +56,7 @@ class CreateQueueRequest(RequestBase):
         self.delay_seconds = delay_seconds
         self.polling_wait_seconds = polling_wait_seconds
         self.logging_enabled = logging_enabled
+        self.message_type = message_type
         self.method = "PUT"
 
 class CreateQueueResponse(ResponseBase):
@@ -99,6 +100,7 @@ class SetQueueAttributesRequest(RequestBase):
         self.delay_seconds = delay_seconds
         self.polling_wait_seconds = polling_wait_seconds
         self.logging_enabled = logging_enabled
+        self.message_type = None
         self.method = "PUT"
 
 class SetQueueAttributesResponse(ResponseBase):
@@ -131,13 +133,14 @@ class GetQueueAttributesResponse(ResponseBase):
         self.logging_enable = None
 
 class SendMessageRequest(RequestBase):
-    def __init__(self, queue_name, message_body, delay_seconds = -1, priority = -1, base64encode = True):
+    def __init__(self, queue_name, message_body, delay_seconds = -1, priority = -1, base64encode = True, message_group_id = ""):
         RequestBase.__init__(self)
         self.queue_name = queue_name
         self.message_body = message_body
         self.delay_seconds = delay_seconds
         self.priority = priority
         self.base64encode = base64encode
+        self.message_group_id = message_group_id
         self.method = "POST"
 
 class SendMessageResponse(ResponseBase):
@@ -148,10 +151,11 @@ class SendMessageResponse(ResponseBase):
         self.receipt_handle = ""
 
 class SendMessageRequestEntry:
-    def __init__(self, message_body, delay_seconds = -1, priority = -1):
+    def __init__(self, message_body, delay_seconds = -1, priority = -1, message_group_id = ""):
         self.message_body = message_body
         self.delay_seconds = delay_seconds
         self.priority = priority
+        self.message_group_id = message_group_id
 
 class BatchSendMessageRequest(RequestBase):
     def __init__(self, queue_name, base64encode):
@@ -161,14 +165,15 @@ class BatchSendMessageRequest(RequestBase):
         self.method = "POST"
         self.message_list = []
 
-    def add_message(self, message_body, delay_seconds = -1, priority = -1):
-        msg = SendMessageRequestEntry(message_body, delay_seconds, priority)
+    def add_message(self, message_body, delay_seconds = -1, priority = -1, message_group_id = ""):
+        msg = SendMessageRequestEntry(message_body, delay_seconds, priority, message_group_id)
         self.message_list.append(msg)
 
 class SendMessageResponseEntry:
     def __init__(self):
         self.message_id = ""
         self.message_body_md5 = ""
+        self.message_group_id = ""
 
 class BatchSendMessageResponse(ResponseBase):
     def __init__(self):
@@ -229,6 +234,7 @@ class ReceiveMessageResponse(PeekMessageResponse):
         PeekMessageResponse.__init__(self)
         self.next_visible_time = -1
         self.receipt_handle = ""
+        self.message_group_id = ""
 
 class BatchReceiveMessageRequest(RequestBase):
     def __init__(self, queue_name, batch_size, base64decode = True, wait_seconds = -1):
@@ -250,6 +256,7 @@ class ReceiveMessageResponseEntry():
         self.priority = -1
         self.next_visible_time = ""
         self.receipt_handle = ""
+        self.message_group_id = ""
 
 class BatchReceiveMessageResponse(ResponseBase):
     def __init__(self):
@@ -293,11 +300,12 @@ class ChangeMessageVisibilityResponse(ResponseBase):
         self.next_visible_time = -1
 
 class CreateTopicRequest(RequestBase):
-    def __init__(self, topic_name, maximum_message_size = -1, logging_enabled = None):
+    def __init__(self, topic_name, maximum_message_size = -1, logging_enabled = None, message_type = None):
         RequestBase.__init__(self)
         self.topic_name = topic_name
         self.maximum_message_size = maximum_message_size
         self.logging_enabled = logging_enabled
+        self.message_type = message_type
         self.method = "PUT"
 
 class CreateTopicResponse(ResponseBase):
@@ -337,6 +345,7 @@ class SetTopicAttributesRequest(RequestBase):
         self.topic_name = topic_name
         self.maximum_message_size = maximum_message_size
         self.logging_enabled = logging_enabled
+        self.message_type = None
         self.method = "PUT"
 
 class SetTopicAttributesResponse(ResponseBase):
@@ -361,13 +370,14 @@ class GetTopicAttributesResponse(ResponseBase):
         self.logging_enabled = None
 
 class PublishMessageRequest(RequestBase):
-    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None, direct_sms=None):
+    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None, direct_sms=None, message_group_id = None):
         RequestBase.__init__(self)
         self.topic_name = topic_name
         self.message_body = message_body
         self.message_tag = message_tag
         self.direct_mail = direct_mail
         self.direct_sms = direct_sms
+        self.message_group_id = message_group_id
         self.method = "POST"
 
 class PublishMessageResponse(ResponseBase):

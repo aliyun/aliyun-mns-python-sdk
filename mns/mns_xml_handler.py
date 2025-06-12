@@ -107,6 +107,7 @@ class QueueEncoder(EncoderBase):
         EncoderBase.insert_if_valid("MessageRetentionPeriod", str(data.message_retention_period), "-1", queue)
         EncoderBase.insert_if_valid("DelaySeconds", str(data.delay_seconds), "-1", queue)
         EncoderBase.insert_if_valid("PollingWaitSeconds", str(data.polling_wait_seconds), "-1", queue)
+        EncoderBase.insert_if_valid("MessageType", str(data.message_type), "None", queue)
 
         logging_enabled = str(data.logging_enabled)
         if str(data.logging_enabled).lower() == "true":
@@ -133,6 +134,7 @@ class MessageEncoder(EncoderBase):
         EncoderBase.insert_if_valid("MessageBody", msgbody, u"", message)
         EncoderBase.insert_if_valid("DelaySeconds", str(data.delay_seconds), u"-1", message)
         EncoderBase.insert_if_valid("Priority", str(data.priority), u"-1", message)
+        EncoderBase.insert_if_valid("MessageGroupId", data.message_group_id, "", message)
         return EncoderBase.dic_to_xml("Message", message)
 
 class MessagesEncoder:
@@ -155,6 +157,7 @@ class MessagesEncoder:
             EncoderBase.insert_if_valid("MessageBody", msgbody, u"", item)
             EncoderBase.insert_if_valid("DelaySeconds", str(msg.delay_seconds), u"-1", item)
             EncoderBase.insert_if_valid("Priority", str(msg.priority), u"-1", item)
+            EncoderBase.insert_if_valid("MessageGroupId", msg.message_group_id, "", item)
             msglist.append(item)
         return EncoderBase.listofdic_to_xml(u"Messages", u"Message", msglist)
 
@@ -166,6 +169,7 @@ class TopicMessageEncoder:
         msgbody = req.message_body
         EncoderBase.insert_if_valid("MessageBody", msgbody, "", message)
         EncoderBase.insert_if_valid("MessageTag", req.message_tag, "", message)
+        EncoderBase.insert_if_valid("MessageGroupId", req.message_group_id, "", message)
         msg_attr = {}
         if req.direct_mail is not None:
             msg_attr["DirectMail"] = json.dumps(req.direct_mail.get())
@@ -191,6 +195,7 @@ class TopicEncoder(EncoderBase):
             logging_enabled = "False"
         EncoderBase.insert_if_valid("MaximumMessageSize", str(data.maximum_message_size), "-1", topic)
         EncoderBase.insert_if_valid("LoggingEnabled", logging_enabled, "None", topic)
+        EncoderBase.insert_if_valid("MessageType", str(data.message_type), "None", topic)
         return EncoderBase.dic_to_xml("Topic", topic)
 
 class SubscriptionEncoder(EncoderBase):
@@ -318,8 +323,12 @@ class SendMessageDecoder(DecoderBase):
         receipt_handle = ""
         if "ReceiptHandle" in data_dic.keys():
             receipt_handle = data_dic["ReceiptHandle"]
+        
+        message_group_id = ""
+        if "MessageGroupId" in data_dic.keys():
+            message_group_id = data_dic["MessageGroupId"]
 
-        return data_dic["MessageId"], data_dic["MessageBodyMD5"], receipt_handle
+        return data_dic["MessageId"], data_dic["MessageBodyMD5"], receipt_handle, message_group_id
 
 class BatchSendMessageDecoder(DecoderBase):
     @staticmethod
@@ -332,6 +341,7 @@ class BatchSendMessageDecoder(DecoderBase):
                 entry = SendMessageResponseEntry()
                 entry.message_id = data_dic["MessageId"]
                 entry.message_body_md5 = data_dic["MessageBodyMD5"]
+                entry.message_group_id = data_dic.get("MessageGroupId", "")
                 message_list.append(entry)
         except Exception as err:
             raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
@@ -371,6 +381,7 @@ class RecvMessageDecoder(DecoderBase):
         for key in key_list:
             if key not in data_dic.keys():
                 raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
+
         if base64decode:
             decode_str = base64.b64decode(data_dic["MessageBody"])
             data_dic["MessageBody"] = decode_str
@@ -397,6 +408,7 @@ class BatchRecvMessageDecoder(DecoderBase):
                 msg.priority = int(data_dic["Priority"])
                 msg.next_visible_time = int(data_dic["NextVisibleTime"])
                 msg.receipt_handle = data_dic["ReceiptHandle"]
+                msg.message_group_id = data_dic.get("MessageGroupId", "")
                 message_list.append(msg)
         except Exception as err:
             raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
@@ -524,7 +536,7 @@ class PublishMessageDecoder(DecoderBase):
         for key in key_list:
             if key not in data_dic.keys():
                 raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
-        return data_dic["MessageId"], data_dic["MessageBodyMD5"]
+        return data_dic["MessageId"], data_dic["MessageBodyMD5"], data_dic.get("MessageGroupId", "")
 
 class ListSubscriptionByTopicDecoder(DecoderBase):
     @staticmethod

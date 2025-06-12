@@ -19,7 +19,7 @@ except ImportError:
     import simplejson as json
 
 class Topic:
-    def __init__(self, topic_name, mns_client, debug=False):
+    def __init__(self, topic_name, mns_client: MNSClient, debug=False):
         self.topic_name = topic_name
         self.mns_client = mns_client
         self.debug = debug
@@ -55,7 +55,7 @@ class Topic:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = CreateTopicRequest(self.topic_name, topic_meta.maximum_message_size, topic_meta.logging_enabled)
+        req = CreateTopicRequest(self.topic_name, topic_meta.maximum_message_size, topic_meta.logging_enabled, topic_meta.message_type)
         req.set_req_info(req_info)
         resp = CreateTopicResponse()
         self.mns_client.create_topic(req, resp)
@@ -137,7 +137,7 @@ class Topic:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = PublishMessageRequest(self.topic_name, message.message_body, message.message_tag, message.direct_mail, message.direct_sms)
+        req = PublishMessageRequest(self.topic_name, message.message_body, message.message_tag, message.direct_mail, message.direct_sms, message.message_group_id)
         req.set_req_info(req_info)
         resp = PublishMessageResponse()
         self.mns_client.publish_message(req, resp)
@@ -196,11 +196,12 @@ class Topic:
         return msg
 
 class TopicMeta:
-    def __init__(self, maximum_message_size = -1, logging_enabled = None):
+    def __init__(self, maximum_message_size = -1, logging_enabled = None, message_type = None):
         """ 主题属性
             @note：设置属性
             :: maximum_message_size: message body的最大长度，单位：Byte
             :: logging_enabled: 是否开启logging功能，如果开启MNS将该主题的日志推送到Account的logging bucket中
+            :: message_type: 消息类型，0表示普通消息，1表示FIFO消息，默认为0
 
             @note: 不可设置属性
             :: message_retention_period: message最长存活时间，单位：秒
@@ -217,12 +218,20 @@ class TopicMeta:
         self.create_time = -1
         self.last_modify_time = -1
         self.topic_name = ""
+        self.message_type = message_type
 
     def set_maximum_message_size(self, maximum_message_size):
         self.maximum_message_size = maximum_message_size
 
     def set_logging_enabled(self, logging_enabled):
         self.logging_enabled = logging_enabled
+    
+    def set_message_type(self, message_type):
+        """设置消息类型
+        @type message_type: int
+        @param message_type: 消息类型，0表示normal，1表示fifo
+        """
+        self.message_type = message_type
 
     def __str__(self):
         meta_info = {"MaximumMessageSize": self.maximum_message_size,
@@ -235,7 +244,7 @@ class TopicMeta:
         return "\n".join(["%s: %s" % (k.ljust(30),v) for k,v in meta_info.items()])
 
 class TopicMessage(object):
-    def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None):
+    def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None, message_group_id = u""):
         """ Specify information of TopicMessage
 
             @note: publish_message params
@@ -243,6 +252,7 @@ class TopicMessage(object):
             :: message_tag         string, used to filter message
             :: direct_mail         DirectMailInfo, the information of direct mail
             :: direct_sms          DirectSMSInfo, the information of direct sms
+            :: message_group_id    string, used to group messages in FIFO topic
 
             @note: publish_message response information
             :: message_id
@@ -259,6 +269,7 @@ class TopicMessage(object):
 
         self.message_id = u""
         self.message_body_md5 = u""
+        self.message_group_id = message_group_id
 
     def set_messagebody(self, message_body):
         self.message_body = message_body
@@ -268,9 +279,16 @@ class TopicMessage(object):
 
     def set_message_tag(self, message_tag):
         self.message_tag = message_tag
+    
+    def set_message_group_id(self, message_group_id):
+        """设置消息组ID
+        @type message_group_id: string  
+        @param message_group_id: 消息组ID，用于FIFO主题
+        """
+        self.message_group_id = message_group_id
 
 class Base64TopicMessage(TopicMessage):
-    def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None):
+    def __init__(self, message_body = u"", message_tag = u"", direct_mail = None, direct_sms = None, message_group_id = u""):
         """ Specify information of Base64TopicMessage
 
             @note: publish_message params
@@ -280,7 +298,7 @@ class Base64TopicMessage(TopicMessage):
             :: direct_sms          DirectSMSInfo, the information of direct sms
 
         """
-        super(Base64TopicMessage, self).__init__(message_body, message_tag, direct_mail, direct_sms)
+        super(Base64TopicMessage, self).__init__(message_body, message_tag, direct_mail, direct_sms, message_group_id)
 
         self.message_body = base64.b64encode(self.message_body.encode("utf-8")).decode("utf-8")
 

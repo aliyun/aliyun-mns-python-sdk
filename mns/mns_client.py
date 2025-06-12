@@ -227,6 +227,7 @@ class MNSClient(object):
             resp.visibility_timeout = int(queue_attr["VisibilityTimeout"])
             resp.polling_wait_seconds = int(queue_attr["PollingWaitSeconds"])
             resp.logging_enabled = True if queue_attr["LoggingEnabled"].lower() == "true" else False
+            resp.message_type = int(queue_attr.get("MessageType", 0))
             if self.logger:
                 self.logger.info("GetQueueAttributes RequestId:%s QueueName:%s" % (resp.get_requestid(), req.queue_name))
 
@@ -247,7 +248,7 @@ class MNSClient(object):
         resp.header = resp_inter.header
         self.check_status(req_inter, resp_inter, resp)
         if resp.error_data == "":
-            resp.message_id, resp.message_body_md5, resp.receipt_handle = SendMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
+            resp.message_id, resp.message_body_md5, resp.receipt_handle, resp.message_group_id = SendMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
             if self.logger:
                 self.logger.info("SendMessage RequestId:%s QueueName:%s Priority:%s DelaySeconds:%s MessageId:%s MessageBodyMD5:%s" % \
                     (resp.get_requestid(), req.queue_name, req.priority, \
@@ -558,6 +559,7 @@ class MNSClient(object):
             resp.message_retention_period = int(topic_attr["MessageRetentionPeriod"])
             resp.topic_name = topic_attr["TopicName"]
             resp.logging_enabled = True if topic_attr["LoggingEnabled"].lower() == "true" else False
+            resp.message_type = int(topic_attr.get("MessageType", 0))
             if self.logger:
                 self.logger.info("GetTopicAttributes RequestId:%s TopicName:%s" % (resp.get_requestid(), req.topic_name))
 
@@ -578,7 +580,7 @@ class MNSClient(object):
         resp.header = resp_inter.header
         self.check_status(req_inter, resp_inter, resp)
         if resp.error_data == "":
-            resp.message_id, resp.message_body_md5 = PublishMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
+            resp.message_id, resp.message_body_md5, resp.message_group_id = PublishMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
             if self.logger:
                 self.logger.info("PublishMessage RequestId:%s TopicName:%s MessageId:%s MessageBodyMD5:%s" % \
                     (resp.get_requestid(), req.topic_name, resp.message_id, resp.message_body_md5))
@@ -798,6 +800,7 @@ class MNSClient(object):
         resp.next_visible_time = int(data["NextVisibleTime"])
         resp.receipt_handle = data["ReceiptHandle"]
         resp.priority = int(data["Priority"])
+        resp.message_group_id = data.get("MessageGroupId", "")
 
     def make_peekresp(self, data, resp):
         resp.dequeue_count = int(data["DequeueCount"])
