@@ -48,7 +48,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = CreateQueueRequest(self.queue_name, queue_meta.visibility_timeout, queue_meta.maximum_message_size, queue_meta.message_retention_period, queue_meta.delay_seconds, queue_meta.polling_wait_seconds, queue_meta.logging_enabled, queue_meta.message_type)
+        req = CreateQueueRequest(self.queue_name, queue_meta.visibility_timeout, queue_meta.maximum_message_size, queue_meta.message_retention_period, queue_meta.delay_seconds, queue_meta.polling_wait_seconds, queue_meta.logging_enabled)
         req.set_req_info(req_info)
         resp = CreateQueueResponse()
         self.mns_client.create_queue(req, resp)
@@ -526,8 +526,7 @@ class QueueMeta:
     DEFAULT_POLLING_WAIT_SECONDS = -1
 
     def __init__(self, vis_timeout=None, max_msg_size=None, msg_ttl=None,
-                 delay_sec=None, polling_wait_sec=None, logging_enabled=None,
-                 message_type=None):
+                 delay_sec=None, polling_wait_sec=None, logging_enabled=None):
         """ 队列属性
             @note: 设置属性
             :: visibility_timeout: message被receive后，持续不可消费的时间, 单位：秒
@@ -536,7 +535,6 @@ class QueueMeta:
             :: delay_seconds: 新message可消费的默认延迟时间，单位：秒
             :: polling_wait_seconds: receive message时，长轮询时间，单位：秒
             :: logging_enabled: 是否开启logging功能，如果开启MNS将该队列的日志推送到Account的logging bucket中
-            :: message_type: 消息类型，0表示normal，1表示fifo
             
             @note: 非设置属性
             :: create_time: queue创建时间，单位：秒 
@@ -556,7 +554,6 @@ class QueueMeta:
         self.create_time = -1
         self.last_modify_time = -1
         self.queue_name = ""
-        self.message_type = message_type
     
     @property
     @deprecated("active_messages即将下线，将在后续版本中移除，请关注官方文档更新")
@@ -606,13 +603,6 @@ class QueueMeta:
     def set_logging_enabled(self, logging_enabled):
         self.logging_enabled = logging_enabled
     
-    def set_message_type(self, message_type):
-        """设置消息类型
-        @type message_type: int
-        @param message_type: 消息类型，0表示normal，1表示fifo
-        """
-        self.message_type = message_type
-
     def __str__(self):
         meta_info = {"VisibilityTimeout": self.visibility_timeout,
                      "MaximumMessageSize": self.maximum_message_size,
@@ -625,8 +615,7 @@ class QueueMeta:
                      "CreateTime": time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(self.create_time)),
                      "LastModifyTime": time.strftime("%Y/%m/%d %H:%M:%S", time.localtime(self.last_modify_time)),
                      "QueueName": self.queue_name,
-                     "LoggingEnabled": self.logging_enabled,
-                     "MessageType": self.message_type}
+                     "LoggingEnabled": self.logging_enabled}
         return "\n".join(["%s: %s" % (k.ljust(30), v) for k, v in meta_info.items()])
 
 

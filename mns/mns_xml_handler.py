@@ -107,7 +107,6 @@ class QueueEncoder(EncoderBase):
         EncoderBase.insert_if_valid("MessageRetentionPeriod", str(data.message_retention_period), "-1", queue)
         EncoderBase.insert_if_valid("DelaySeconds", str(data.delay_seconds), "-1", queue)
         EncoderBase.insert_if_valid("PollingWaitSeconds", str(data.polling_wait_seconds), "-1", queue)
-        EncoderBase.insert_if_valid("MessageType", str(data.message_type), "None", queue)
 
         logging_enabled = str(data.logging_enabled)
         if str(data.logging_enabled).lower() == "true":
@@ -195,7 +194,6 @@ class TopicEncoder(EncoderBase):
             logging_enabled = "False"
         EncoderBase.insert_if_valid("MaximumMessageSize", str(data.maximum_message_size), "-1", topic)
         EncoderBase.insert_if_valid("LoggingEnabled", logging_enabled, "None", topic)
-        EncoderBase.insert_if_valid("MessageType", str(data.message_type), "None", topic)
         return EncoderBase.dic_to_xml("Topic", topic)
 
 class SubscriptionEncoder(EncoderBase):

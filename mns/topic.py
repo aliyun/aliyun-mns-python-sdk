@@ -55,7 +55,7 @@ class Topic:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = CreateTopicRequest(self.topic_name, topic_meta.maximum_message_size, topic_meta.logging_enabled, topic_meta.message_type)
+        req = CreateTopicRequest(self.topic_name, topic_meta.maximum_message_size, topic_meta.logging_enabled)
         req.set_req_info(req_info)
         resp = CreateTopicResponse()
         self.mns_client.create_topic(req, resp)
@@ -196,12 +196,11 @@ class Topic:
         return msg
 
 class TopicMeta:
-    def __init__(self, maximum_message_size = -1, logging_enabled = None, message_type = None):
+    def __init__(self, maximum_message_size = -1, logging_enabled = None):
         """ 主题属性
             @note：设置属性
             :: maximum_message_size: message body的最大长度，单位：Byte
             :: logging_enabled: 是否开启logging功能，如果开启MNS将该主题的日志推送到Account的logging bucket中
-            :: message_type: 消息类型，0表示普通消息，1表示FIFO消息，默认为0
 
             @note: 不可设置属性
             :: message_retention_period: message最长存活时间，单位：秒
@@ -218,7 +217,6 @@ class TopicMeta:
         self.create_time = -1
         self.last_modify_time = -1
         self.topic_name = ""
-        self.message_type = message_type
 
     def set_maximum_message_size(self, maximum_message_size):
         self.maximum_message_size = maximum_message_size
@@ -226,13 +224,6 @@ class TopicMeta:
     def set_logging_enabled(self, logging_enabled):
         self.logging_enabled = logging_enabled
     
-    def set_message_type(self, message_type):
-        """设置消息类型
-        @type message_type: int
-        @param message_type: 消息类型，0表示normal，1表示fifo
-        """
-        self.message_type = message_type
-
     def __str__(self):
         meta_info = {"MaximumMessageSize": self.maximum_message_size,
                      "MessageRetentionPeriod": self.message_retention_period,

@@ -47,7 +47,7 @@ class GetAccountAttributesResponse(ResponseBase):
         self.logging_bucket = ""
 
 class CreateQueueRequest(RequestBase):
-    def __init__(self, queue_name, visibility_timeout = -1, maximum_message_size = -1, message_retention_period = -1, delay_seconds = -1, polling_wait_seconds = -1, logging_enabled = None, message_type = None):
+    def __init__(self, queue_name, visibility_timeout = -1, maximum_message_size = -1, message_retention_period = -1, delay_seconds = -1, polling_wait_seconds = -1, logging_enabled = None):
         RequestBase.__init__(self)
         self.queue_name = queue_name
         self.visibility_timeout = visibility_timeout
@@ -56,7 +56,6 @@ class CreateQueueRequest(RequestBase):
         self.delay_seconds = delay_seconds
         self.polling_wait_seconds = polling_wait_seconds
         self.logging_enabled = logging_enabled
-        self.message_type = message_type
         self.method = "PUT"
 
 class CreateQueueResponse(ResponseBase):
@@ -100,7 +99,6 @@ class SetQueueAttributesRequest(RequestBase):
         self.delay_seconds = delay_seconds
         self.polling_wait_seconds = polling_wait_seconds
         self.logging_enabled = logging_enabled
-        self.message_type = None
         self.method = "PUT"
 
 class SetQueueAttributesResponse(ResponseBase):
@@ -300,12 +298,11 @@ class ChangeMessageVisibilityResponse(ResponseBase):
         self.next_visible_time = -1
 
 class CreateTopicRequest(RequestBase):
-    def __init__(self, topic_name, maximum_message_size = -1, logging_enabled = None, message_type = None):
+    def __init__(self, topic_name, maximum_message_size = -1, logging_enabled = None):
         RequestBase.__init__(self)
         self.topic_name = topic_name
         self.maximum_message_size = maximum_message_size
         self.logging_enabled = logging_enabled
-        self.message_type = message_type
         self.method = "PUT"
 
 class CreateTopicResponse(ResponseBase):
@@ -345,7 +342,6 @@ class SetTopicAttributesRequest(RequestBase):
         self.topic_name = topic_name
         self.maximum_message_size = maximum_message_size
         self.logging_enabled = logging_enabled
-        self.message_type = None
         self.method = "PUT"
 
 class SetTopicAttributesResponse(ResponseBase):

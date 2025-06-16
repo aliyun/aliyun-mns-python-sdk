@@ -227,7 +227,6 @@ class MNSClient(object):
             resp.visibility_timeout = int(queue_attr["VisibilityTimeout"])
             resp.polling_wait_seconds = int(queue_attr["PollingWaitSeconds"])
             resp.logging_enabled = True if queue_attr["LoggingEnabled"].lower() == "true" else False
-            resp.message_type = int(queue_attr.get("MessageType", 0))
             if self.logger:
                 self.logger.info("GetQueueAttributes RequestId:%s QueueName:%s" % (resp.get_requestid(), req.queue_name))
 
@@ -559,7 +558,6 @@ class MNSClient(object):
             resp.message_retention_period = int(topic_attr["MessageRetentionPeriod"])
             resp.topic_name = topic_attr["TopicName"]
             resp.logging_enabled = True if topic_attr["LoggingEnabled"].lower() == "true" else False
-            resp.message_type = int(topic_attr.get("MessageType", 0))
             if self.logger:
                 self.logger.info("GetTopicAttributes RequestId:%s TopicName:%s" % (resp.get_requestid(), req.topic_name))
 
