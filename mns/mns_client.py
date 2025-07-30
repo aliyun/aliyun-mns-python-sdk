@@ -799,6 +799,11 @@ class MNSClient(object):
         resp.receipt_handle = data["ReceiptHandle"]
         resp.priority = int(data["Priority"])
         resp.message_group_id = data.get("MessageGroupId", "")
+        # 处理属性
+        if "UserProperties" in data:
+            resp.user_properties = data["UserProperties"]
+        if "SystemProperties" in data:
+            resp.system_properties = data["SystemProperties"]
 
     def make_peekresp(self, data, resp):
         resp.dequeue_count = int(data["DequeueCount"])
@@ -808,6 +813,11 @@ class MNSClient(object):
         resp.message_id = data["MessageId"]
         resp.message_body_md5 = data["MessageBodyMD5"]
         resp.priority = int(data["Priority"])
+        # 处理属性
+        if "UserProperties" in data:
+            resp.user_properties = data["UserProperties"]
+        if "SystemProperties" in data:
+            resp.system_properties = data["SystemProperties"]
 
     def process_host(self, host):
         if host.startswith("http://"):

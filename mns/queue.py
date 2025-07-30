@@ -12,6 +12,7 @@ from deprecated import deprecated
 from .mns_request import *
 from .mns_exception import *
 from .mns_client import MNSClient
+from .message_property import MessagePropertyValue, PropertyType, MessageSystemPropertyValue, SystemPropertyName
 
 class Queue:
     def __init__(self, queue_name, mns_client: MNSClient, debug=False):
@@ -131,6 +132,10 @@ class Queue:
             :: MNSServerException           mns处理异常
         """
         req = SendMessageRequest(self.queue_name, message.message_body, message.delay_seconds, message.priority, self.encoding, message.message_group_id)
+
+        req.user_properties = message.get_user_properties()
+        req.system_properties = message.get_system_properties()
+
         req.set_req_info(req_info)
         resp = SendMessageResponse()
         self.mns_client.send_message(req, resp)
@@ -157,7 +162,7 @@ class Queue:
         req = BatchSendMessageRequest(self.queue_name, self.encoding)
         req.set_req_info(req_info)
         for msg in messages:
-            req.add_message(msg.message_body, msg.delay_seconds, msg.priority, msg.message_group_id)
+            req.add_message(msg.message_body, msg.delay_seconds, msg.priority, msg.message_group_id, msg.get_user_properties(), msg.get_system_properties())
         resp = BatchSendMessageResponse()
         self.mns_client.batch_send_message(req, resp)
         self.debuginfo(resp)
@@ -471,6 +476,12 @@ class Queue:
         msg.first_dequeue_time = resp.first_dequeue_time
         msg.message_body = resp.message_body
         msg.priority = resp.priority
+
+        # 处理属性
+        if hasattr(resp, 'user_properties'):
+            msg.set_user_properties(resp.user_properties)
+        if hasattr(resp, 'system_properties'):
+            msg._set_system_properties(resp.system_properties)
         return msg
 
     def __batchpeek_resp2msg__(self, resp):
@@ -484,6 +495,11 @@ class Queue:
             msg.first_dequeue_time = entry.first_dequeue_time
             msg.message_body = entry.message_body
             msg.priority = entry.priority
+            # 处理属性
+            if hasattr(entry, 'user_properties'):
+                msg.set_user_properties(entry.user_properties)
+            if hasattr(entry, 'system_properties'):
+                msg._set_system_properties(entry.system_properties)
             msg_list.append(msg)
         return msg_list
 
@@ -508,6 +524,11 @@ class Queue:
             msg.next_visible_time = entry.next_visible_time
             msg.receipt_handle = entry.receipt_handle
             msg.message_group_id = entry.message_group_id
+            # 处理属性
+            if hasattr(entry, 'user_properties'):
+                msg.set_user_properties(entry.user_properties)
+            if hasattr(entry, 'system_properties'):
+                msg._set_system_properties(entry.system_properties)
             msg_list.append(msg)
         return msg_list
 
@@ -628,6 +649,8 @@ class Message:
             :: delay_seconds        消息延迟时间
             :: priority             消息优先级
             :: messageGroupId       消息组ID，FIFO队列使用
+            :: user_properties     用户自定义属性，Map<String, MessagePropertyValue>
+            :: system_properties   系统属性，Map<SystemPropertyName, MessageSystemPropertyValue>
 
             @note: send_message 返回属性
             :: message_id           消息编号
@@ -653,6 +676,10 @@ class Message:
         self.delay_seconds = -1 if delay_seconds is None else delay_seconds
         self.priority = -1 if priority is None else priority
 
+        # 用户自定义属性和系统属性
+        self.user_properties = {}  # Map<String, MessagePropertyValue>
+        self.system_properties = {}  # Map<String, MessageSystemPropertyValue>
+
         self.message_id = ""
         self.message_body_md5 = ""
 
@@ -669,6 +696,39 @@ class Message:
 
     def set_priority(self, priority):
         self.priority = priority
+    
+    def set_user_properties(self, user_properties):
+        """设置用户自定义属性"""
+        if user_properties is not None:
+            self.user_properties = user_properties
+        else:
+            self.user_properties = {}
+    
+    def get_user_properties(self):
+        """获取用户自定义属性"""
+        return self.user_properties
+    
+    def add_user_property(self, name, property_value):
+        """添加单个用户自定义属性"""
+        if not isinstance(property_value, MessagePropertyValue):
+            raise ValueError("property_value must be instance of MessagePropertyValue")
+        self.user_properties[name] = property_value
+    
+    def get_system_properties(self):
+        """获取系统属性"""
+        return self.system_properties
+    
+    def add_system_property(self, name, property_value):
+        """
+        添加单个系统属性
+        @param name: 系统属性名称，必须是 SystemPropertyName 中的有效值
+        @param property_value: MessageSystemPropertyValue 实例
+        """
+        if not isinstance(property_value, MessageSystemPropertyValue):
+            raise ValueError("property_value must be instance of MessageSystemPropertyValue")
+        if not SystemPropertyName.is_valid(name):
+            raise ValueError("Invalid system property name: %s. Valid names are: %s" % (name, SystemPropertyName.values()))
+        self.system_properties[name] = property_value
 
     def set_message_group_id(self, message_group_id):
         """ 设置消息组ID，仅FIFO队列使用
@@ -677,3 +737,9 @@ class Message:
             @param message_group_id: 消息组ID
         """
         self.message_group_id = message_group_id
+    def _set_system_properties(self, system_properties):
+        """内部方法：设置系统属性，仅用于接收消息时的反序列化"""
+        if system_properties is not None:
+            self.system_properties = system_properties
+        else:
+            self.system_properties = {}
