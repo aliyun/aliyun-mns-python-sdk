@@ -5,6 +5,7 @@ import unittest
 from mns.mns_xml_handler import *
 from mns.queue import *
 from mns.auth import StaticCredentialsProvider
+from mns.mns_client import MNSClient
 
 RAW_XML_DATA = u"""<?xml version="1.0" ?>
                 <Message xmlns="http://mns.aliyuncs.com/doc/v1">

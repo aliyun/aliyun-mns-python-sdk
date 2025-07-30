@@ -139,6 +139,8 @@ class SendMessageRequest(RequestBase):
         self.priority = priority
         self.base64encode = base64encode
         self.method = "POST"
+        self.user_properties = {}
+        self.system_properties = {}
 
 class SendMessageResponse(ResponseBase):
     def __init__(self):
@@ -152,6 +154,8 @@ class SendMessageRequestEntry:
         self.message_body = message_body
         self.delay_seconds = delay_seconds
         self.priority = priority
+        self.user_properties = {}
+        self.system_properties = {}
 
 class BatchSendMessageRequest(RequestBase):
     def __init__(self, queue_name, base64encode):
@@ -161,8 +165,12 @@ class BatchSendMessageRequest(RequestBase):
         self.method = "POST"
         self.message_list = []
 
-    def add_message(self, message_body, delay_seconds = -1, priority = -1):
+    def add_message(self, message_body, delay_seconds = -1, priority = -1, user_properties = None, system_properties = None):
         msg = SendMessageRequestEntry(message_body, delay_seconds, priority)
+        if user_properties:
+            msg.user_properties = user_properties
+        if system_properties:
+            msg.system_properties = system_properties
         self.message_list.append(msg)
 
 class SendMessageResponseEntry:
@@ -192,6 +200,8 @@ class PeekMessageResponse(ResponseBase):
         self.message_id = ""
         self.message_body_md5 = ""
         self.priority = -1
+        self.user_properties = {}
+        self.system_properties = {}
 
 class BatchPeekMessageRequest(RequestBase):
     def __init__(self, queue_name, batch_size, base64decode = True):
@@ -210,6 +220,8 @@ class PeekMessageResponseEntry:
         self.message_id = ""
         self.message_body_md5 = ""
         self.priority = -1
+        self.user_properties = {}
+        self.system_properties = {}
 
 class BatchPeekMessageResponse(ResponseBase):
     def __init__(self):
@@ -250,6 +262,8 @@ class ReceiveMessageResponseEntry():
         self.priority = -1
         self.next_visible_time = ""
         self.receipt_handle = ""
+        self.user_properties = {}
+        self.system_properties = {}
 
 class BatchReceiveMessageResponse(ResponseBase):
     def __init__(self):

@@ -15,6 +15,7 @@ import types
 from xml.etree import ElementTree
 from .mns_exception import *
 from .mns_request import *
+from .message_property import MessagePropertyValue, PropertyType, MessageSystemPropertyValue, SystemPropertyType
 try:
     import json
 except ImportError:
@@ -54,9 +55,22 @@ class EncoderBase:
                 keyNode = doc.createElement(k)
                 if type(v) is dict:
                     for subkey,subv in v.items():
-                        subNode = doc.createElement(subkey)
-                        subNode.appendChild(doc.createTextNode(subv))
-                        keyNode.appendChild(subNode)
+                        if isinstance(subv, list):
+                            # 处理列表类型 (如 PropertyValue 列表)
+                            for item in subv:
+                                subNode = doc.createElement(subkey)
+                                if isinstance(item, dict):
+                                    for itemkey, itemvalue in item.items():
+                                        itemNode = doc.createElement(itemkey)
+                                        itemNode.appendChild(doc.createTextNode(str(itemvalue)))
+                                        subNode.appendChild(itemNode)
+                                else:
+                                    subNode.appendChild(doc.createTextNode(str(item)))
+                                keyNode.appendChild(subNode)
+                        else:
+                            subNode = doc.createElement(subkey)
+                            subNode.appendChild(doc.createTextNode(str(subv)))
+                            keyNode.appendChild(subNode)
                 else:
                     #tmp = doc.createTextNode(v.decode('utf-8'))
                     tmp = doc.createTextNode(v)
@@ -85,7 +99,31 @@ class EncoderBase:
                 for k,v in subData.items():
                     keyNode = doc.createElement(k)
                     secNode.appendChild(keyNode)
-                    keyNode.appendChild(doc.createTextNode(v))
+                    
+                    # 检查是否是嵌套的字典结构（如属性）
+                    if isinstance(v, dict):
+                        # 处理嵌套结构，如 UserProperties 和 SystemProperties
+                        for subkey, subv in v.items():
+                            if isinstance(subv, list):
+                                # 处理列表类型 (如 PropertyValue 列表)
+                                for item in subv:
+                                    subNode = doc.createElement(subkey)
+                                    if isinstance(item, dict):
+                                        for itemkey, itemvalue in item.items():
+                                            itemNode = doc.createElement(itemkey)
+                                            itemNode.appendChild(doc.createTextNode(str(itemvalue)))
+                                            subNode.appendChild(itemNode)
+                                    else:
+                                        subNode.appendChild(doc.createTextNode(str(item)))
+                                    keyNode.appendChild(subNode)
+                            else:
+                                # 处理简单的嵌套值
+                                subNode = doc.createElement(subkey)
+                                subNode.appendChild(doc.createTextNode(str(subv)))
+                                keyNode.appendChild(subNode)
+                    else:
+                        # 处理简单值
+                        keyNode.appendChild(doc.createTextNode(str(v)))
         else:
             nullNode = doc.createTextNode("")
             rootNode.appendChild(nullNode)
@@ -133,6 +171,40 @@ class MessageEncoder(EncoderBase):
         EncoderBase.insert_if_valid("MessageBody", msgbody, u"", message)
         EncoderBase.insert_if_valid("DelaySeconds", str(data.delay_seconds), u"-1", message)
         EncoderBase.insert_if_valid("Priority", str(data.priority), u"-1", message)
+
+        # 添加用户自定义属性序列化
+        if hasattr(data, 'user_properties') and data.user_properties:
+            user_props_list = []
+            for name, prop_value in data.user_properties.items():
+                # 根据类型决定如何获取值
+                if prop_value.get_data_type() == PropertyType.BINARY:
+                    # 二进制类型：进行 base64 编码
+                    encoded_value = base64.b64encode(prop_value.get_binary_value()).decode('ascii')
+                else:
+                    # 其他类型：直接获取字符串值
+                    encoded_value = prop_value.get_string_value_by_type()
+                property_value_dict = {
+                    "Name": name,
+                    "Value": encoded_value,
+                    "Type": prop_value.get_data_type()
+                }
+                user_props_list.append(property_value_dict)
+            if user_props_list:
+                message["UserProperties"] = {"PropertyValue": user_props_list}
+        
+        # 添加系统属性序列化
+        if hasattr(data, 'system_properties') and data.system_properties:
+            sys_props_list = []
+            for name, prop_value in data.system_properties.items():
+                system_property_value_dict = {
+                    "Name": name,
+                    "Value": prop_value.get_string_value_by_type(),
+                    "Type": prop_value.get_data_type()
+                }
+                sys_props_list.append(system_property_value_dict)
+            if sys_props_list:
+                message["SystemProperties"] = {"SystemPropertyValue": sys_props_list}
+
         return EncoderBase.dic_to_xml("Message", message)
 
 class MessagesEncoder:
@@ -155,6 +227,40 @@ class MessagesEncoder:
             EncoderBase.insert_if_valid("MessageBody", msgbody, u"", item)
             EncoderBase.insert_if_valid("DelaySeconds", str(msg.delay_seconds), u"-1", item)
             EncoderBase.insert_if_valid("Priority", str(msg.priority), u"-1", item)
+
+            # 添加用户自定义属性序列化
+            if hasattr(msg, 'user_properties') and msg.user_properties:
+                user_props_list = []
+                for name, prop_value in msg.user_properties.items():
+                    # 根据类型决定如何获取值
+                    if prop_value.get_data_type() == PropertyType.BINARY:
+                        # 二进制类型：进行 base64 编码
+                        encoded_value = base64.b64encode(prop_value.get_binary_value()).decode('ascii')
+                    else:
+                        # 其他类型：直接获取字符串值
+                        encoded_value = prop_value.get_string_value_by_type()
+                    property_value_dict = {
+                        "Name": name,
+                        "Value": encoded_value,
+                        "Type": prop_value.get_data_type()
+                    }
+                    user_props_list.append(property_value_dict)
+                if user_props_list:
+                    item["UserProperties"] = {"PropertyValue": user_props_list}
+            
+            # 添加系统属性序列化
+            if hasattr(msg, 'system_properties') and msg.system_properties:
+                sys_props_list = []
+                for name, prop_value in msg.system_properties.items():
+                    system_property_value_dict = {
+                        "Name": name,
+                        "Value": prop_value.get_string_value_by_type(),
+                        "Type": prop_value.get_data_type()
+                    }
+                    sys_props_list.append(system_property_value_dict)
+                if sys_props_list:
+                    item["SystemProperties"] = {"SystemPropertyValue": sys_props_list}
+
             msglist.append(item)
         return EncoderBase.listofdic_to_xml(u"Messages", u"Message", msglist)
 
@@ -173,6 +279,40 @@ class TopicMessageEncoder:
             msg_attr["DirectSMS"] = json.dumps(req.direct_sms.get())
         if msg_attr != {}:
             message["MessageAttributes"] = msg_attr
+
+        # 添加用户自定义属性序列化
+        if hasattr(req, 'user_properties') and req.user_properties:
+            user_props_list = []
+            for name, prop_value in req.user_properties.items():
+                # 根据类型决定如何获取值
+                if prop_value.get_data_type() == PropertyType.BINARY:
+                    # 二进制类型：进行 base64 编码
+                    encoded_value = base64.b64encode(prop_value.get_binary_value()).decode('ascii')
+                else:
+                    # 其他类型：直接获取字符串值
+                    encoded_value = prop_value.get_string_value_by_type()
+                property_value_dict = {
+                    "Name": name,
+                    "Value": encoded_value,
+                    "Type": prop_value.get_data_type()
+                }
+                user_props_list.append(property_value_dict)
+            if user_props_list:
+                message["UserProperties"] = {"PropertyValue": user_props_list}
+        
+        # 添加系统属性序列化
+        if hasattr(req, 'system_properties') and req.system_properties:
+            sys_props_list = []
+            for name, prop_value in req.system_properties.items():
+                system_property_value_dict = {
+                    "Name": name,
+                    "Value": prop_value.get_string_value_by_type(),
+                    "Type": prop_value.get_data_type()
+                }
+                sys_props_list.append(system_property_value_dict)
+            if sys_props_list:
+                message["SystemProperties"] = {"SystemPropertyValue": sys_props_list}
+        
         return EncoderBase.dic_to_xml("Message", message)
 
 class ReceiptHandlesEncoder:
@@ -229,7 +369,10 @@ class DecoderBase:
         try:
             for node in DecoderBase.xml_to_nodes(tag_name, xml_data):
                 if node.nodeName != "#text":
-                    if node.childNodes != []:
+                    # 检查是否是属性相关的嵌套结构
+                    if node.nodeName in ["UserProperties", "SystemProperties"]:
+                        DecoderBase._parse_properties_node(node, data_dic)
+                    elif node.childNodes != []:
                         data_dic[node.nodeName] = node.firstChild.data
                     else:
                         data_dic[node.nodeName] = ""
@@ -245,11 +388,125 @@ class DecoderBase:
 
                 data_dic = {}
                 for property in message.childNodes:
-                    if property.nodeName != "#text" and property.childNodes != []:
+                    if property.nodeName in ["UserProperties", "SystemProperties"]:
+                        DecoderBase._parse_properties_node(property, data_dic)
+                    elif property.nodeName != "#text" and property.childNodes != []:
                         data_dic[property.nodeName] = property.firstChild.data
                 data_listofdic.append(data_dic)
         except MNSClientNetworkException as e:
             raise MNSClientNetworkException(e.type, e.message, req_id)
+    
+    @staticmethod
+    def _parse_properties_node(properties_node, data_dic):
+        """
+        解析属性节点（UserProperties 或 SystemProperties）
+        """
+        try:
+            properties_type = properties_node.nodeName
+            properties_data = {}
+            
+            if properties_type == "UserProperties":
+                property_values = []
+                for child_node in properties_node.childNodes:
+                    if child_node.nodeName == "PropertyValue":
+                        prop_data = {}
+                        for prop_child in child_node.childNodes:
+                            if prop_child.nodeName != "#text" and prop_child.childNodes:
+                                prop_data[prop_child.nodeName] = prop_child.firstChild.data
+                        if prop_data:
+                            property_values.append(prop_data)
+                
+                if property_values:
+                    properties_data["PropertyValue"] = property_values
+            
+            elif properties_type == "SystemProperties":
+                property_values = []
+                for child_node in properties_node.childNodes:
+                    if child_node.nodeName == "SystemPropertyValue":
+                        prop_data = {}
+                        for prop_child in child_node.childNodes:
+                            if prop_child.nodeName != "#text" and prop_child.childNodes:
+                                prop_data[prop_child.nodeName] = prop_child.firstChild.data
+                        if prop_data:
+                            property_values.append(prop_data)
+                
+                if property_values:
+                    properties_data["SystemPropertyValue"] = property_values
+            
+            if properties_data:
+                data_dic[properties_type] = properties_data
+                
+        except Exception:
+            # 属性解析失败不影响主要消息解析
+            pass
+    @staticmethod
+    def parse_properties_from_dict(data_dic, properties_type):
+        """
+        通用方法：从解析后的字典中提取属性
+        
+        @param data_dic: 解析后的消息字典
+        @param properties_type: 属性类型，"UserProperties" 或 "SystemProperties"
+        @return: 属性字典，key为属性名，value为属性值对象
+        """
+        props = {}
+        
+        if properties_type not in data_dic:
+            return props
+        
+        properties_dict = data_dic[properties_type]
+        
+        # 确定属性值的键名和对应的类
+        if properties_type == "UserProperties":
+            value_key = "PropertyValue"
+            property_class = MessagePropertyValue
+        elif properties_type == "SystemProperties":
+            value_key = "SystemPropertyValue"
+            property_class = MessageSystemPropertyValue
+        else:
+            return props
+        
+        # 处理属性值列表
+        if value_key in properties_dict:
+            property_values = properties_dict[value_key]
+            
+            # 确保是列表格式
+            if not isinstance(property_values, list):
+                property_values = [property_values]
+            
+            for prop_data in property_values:
+                if isinstance(prop_data, dict):
+                    name = prop_data.get("Name")
+                    value = prop_data.get("Value")
+                    prop_type = prop_data.get("Type")
+                    
+                    if name and value is not None and prop_type:
+                        try:
+                            # 用户属性的二进制类型需要特殊处理
+                            if (properties_type == "UserProperties" and 
+                                prop_type == PropertyType.BINARY):
+                                try:
+                                    binary_data = base64.b64decode(value)
+                                    prop_value = property_class(PropertyType.BINARY, binary_data)
+                                except Exception:
+                                    raise MNSClientException("InvalidBinaryData", "Failed to decode binary data for property '%s'." % name)
+                            else:
+                                prop_value = property_class(prop_type, value)
+                            props[name] = prop_value
+                        except Exception:
+                            raise MNSClientException("InvalidPropertyValue", "Failed to create property value for '%s' with type '%s'." % (name, prop_type))
+        
+        return props
+    
+    @staticmethod
+    def parse_user_properties_from_dict(data_dic):
+        """从解析后的字典中提取用户自定义属性"""
+        return DecoderBase.parse_properties_from_dict(data_dic, "UserProperties")
+    
+    @staticmethod
+    def parse_system_properties_from_dict(data_dic):
+        """从解析后的字典中提取系统属性"""
+        return DecoderBase.parse_properties_from_dict(data_dic, "SystemProperties")
+
 
 class ListQueueDecoder(DecoderBase):
     @staticmethod
@@ -374,6 +631,15 @@ class RecvMessageDecoder(DecoderBase):
         if base64decode:
             decode_str = base64.b64decode(data_dic["MessageBody"])
             data_dic["MessageBody"] = decode_str
+        
+        user_properties = DecoderBase.parse_user_properties_from_dict(data_dic)
+        system_properties = DecoderBase.parse_system_properties_from_dict(data_dic)
+
+        if user_properties:
+            data_dic["UserProperties"] = user_properties
+        if system_properties:
+            data_dic["SystemProperties"] = system_properties
+
         return data_dic
 
 class BatchRecvMessageDecoder(DecoderBase):
@@ -397,6 +663,9 @@ class BatchRecvMessageDecoder(DecoderBase):
                 msg.priority = int(data_dic["Priority"])
                 msg.next_visible_time = int(data_dic["NextVisibleTime"])
                 msg.receipt_handle = data_dic["ReceiptHandle"]
+                msg.user_properties = DecoderBase.parse_user_properties_from_dict(data_dic)
+                msg.system_properties = DecoderBase.parse_system_properties_from_dict(data_dic)
+
                 message_list.append(msg)
         except Exception as err:
             raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
@@ -414,6 +683,14 @@ class PeekMessageDecoder(DecoderBase):
         if base64decode:
             decode_str = base64.b64decode(data_dic["MessageBody"])
             data_dic["MessageBody"] = decode_str
+        
+        user_properties = DecoderBase.parse_user_properties_from_dict(data_dic)
+        system_properties = DecoderBase.parse_system_properties_from_dict(data_dic)
+        
+        if user_properties:
+            data_dic["UserProperties"] = user_properties
+        if system_properties:
+            data_dic["SystemProperties"] = system_properties
         return data_dic
 
 class BatchPeekMessageDecoder(DecoderBase):
@@ -435,6 +712,8 @@ class BatchPeekMessageDecoder(DecoderBase):
                 msg.message_id = data_dic["MessageId"]
                 msg.message_body_md5 = data_dic["MessageBodyMD5"]
                 msg.priority = int(data_dic["Priority"])
+                msg.user_properties = DecoderBase.parse_user_properties_from_dict(data_dic)
+                msg.system_properties = DecoderBase.parse_system_properties_from_dict(data_dic)
                 message_list.append(msg)
         except Exception as err:
             raise MNSClientNetworkException("RespDataDamaged", xml_data, req_id)
