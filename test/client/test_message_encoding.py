@@ -27,6 +27,7 @@ class MockSendRequest:
         self.base64encode = base64encode
         self.user_properties = {}
         self.system_properties = {}
+        self.message_group_id = ""
 
 
 class TestMessageEncoding(unittest.TestCase):

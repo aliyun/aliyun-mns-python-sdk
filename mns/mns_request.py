@@ -131,13 +131,14 @@ class GetQueueAttributesResponse(ResponseBase):
         self.logging_enable = None
 
 class SendMessageRequest(RequestBase):
-    def __init__(self, queue_name, message_body, delay_seconds = -1, priority = -1, base64encode = True):
+    def __init__(self, queue_name, message_body, delay_seconds = -1, priority = -1, base64encode = True, message_group_id = ""):
         RequestBase.__init__(self)
         self.queue_name = queue_name
         self.message_body = message_body
         self.delay_seconds = delay_seconds
         self.priority = priority
         self.base64encode = base64encode
+        self.message_group_id = message_group_id
         self.method = "POST"
         self.user_properties = {}
         self.system_properties = {}
@@ -150,12 +151,13 @@ class SendMessageResponse(ResponseBase):
         self.receipt_handle = ""
 
 class SendMessageRequestEntry:
-    def __init__(self, message_body, delay_seconds = -1, priority = -1):
+    def __init__(self, message_body, delay_seconds = -1, priority = -1, message_group_id = ""):
         self.message_body = message_body
         self.delay_seconds = delay_seconds
         self.priority = priority
         self.user_properties = {}
         self.system_properties = {}
+        self.message_group_id = message_group_id
 
 class BatchSendMessageRequest(RequestBase):
     def __init__(self, queue_name, base64encode):
@@ -165,8 +167,8 @@ class BatchSendMessageRequest(RequestBase):
         self.method = "POST"
         self.message_list = []
 
-    def add_message(self, message_body, delay_seconds = -1, priority = -1, user_properties = None, system_properties = None):
-        msg = SendMessageRequestEntry(message_body, delay_seconds, priority)
+    def add_message(self, message_body, delay_seconds = -1, priority = -1, message_group_id = "", user_properties = None, system_properties = None):
+        msg = SendMessageRequestEntry(message_body, delay_seconds, priority, message_group_id)
         if user_properties:
             msg.user_properties = user_properties
         if system_properties:
@@ -177,6 +179,7 @@ class SendMessageResponseEntry:
     def __init__(self):
         self.message_id = ""
         self.message_body_md5 = ""
+        self.message_group_id = ""
 
 class BatchSendMessageResponse(ResponseBase):
     def __init__(self):
@@ -241,6 +244,7 @@ class ReceiveMessageResponse(PeekMessageResponse):
         PeekMessageResponse.__init__(self)
         self.next_visible_time = -1
         self.receipt_handle = ""
+        self.message_group_id = ""
 
 class BatchReceiveMessageRequest(RequestBase):
     def __init__(self, queue_name, batch_size, base64decode = True, wait_seconds = -1):
@@ -262,6 +266,7 @@ class ReceiveMessageResponseEntry():
         self.priority = -1
         self.next_visible_time = ""
         self.receipt_handle = ""
+        self.message_group_id = ""
         self.user_properties = {}
         self.system_properties = {}
 
@@ -375,13 +380,14 @@ class GetTopicAttributesResponse(ResponseBase):
         self.logging_enabled = None
 
 class PublishMessageRequest(RequestBase):
-    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None, direct_sms=None):
+    def __init__(self, topic_name, message_body, message_tag="", direct_mail=None, direct_sms=None, message_group_id = None):
         RequestBase.__init__(self)
         self.topic_name = topic_name
         self.message_body = message_body
         self.message_tag = message_tag
         self.direct_mail = direct_mail
         self.direct_sms = direct_sms
+        self.message_group_id = message_group_id
         self.method = "POST"
 
 class PublishMessageResponse(ResponseBase):

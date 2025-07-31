@@ -11,6 +11,7 @@ import time
 from deprecated import deprecated
 from .mns_request import *
 from .mns_exception import *
+from .mns_client import MNSClient
 from .message_property import MessagePropertyValue, PropertyType, MessageSystemPropertyValue, SystemPropertyName
 
 class Queue:
@@ -130,7 +131,7 @@ class Queue:
             :: MNSClientNetworkException    网络异常
             :: MNSServerException           mns处理异常
         """
-        req = SendMessageRequest(self.queue_name, message.message_body, message.delay_seconds, message.priority, self.encoding)
+        req = SendMessageRequest(self.queue_name, message.message_body, message.delay_seconds, message.priority, self.encoding, message.message_group_id)
 
         req.user_properties = message.get_user_properties()
         req.system_properties = message.get_system_properties()
@@ -161,7 +162,7 @@ class Queue:
         req = BatchSendMessageRequest(self.queue_name, self.encoding)
         req.set_req_info(req_info)
         for msg in messages:
-            req.add_message(msg.message_body, msg.delay_seconds, msg.priority, msg.get_user_properties(), msg.get_system_properties())
+            req.add_message(msg.message_body, msg.delay_seconds, msg.priority, msg.message_group_id, msg.get_user_properties(), msg.get_system_properties())
         resp = BatchSendMessageResponse()
         self.mns_client.batch_send_message(req, resp)
         self.debuginfo(resp)
@@ -462,6 +463,7 @@ class Queue:
             msg = Message()
             msg.message_id = entry.message_id
             msg.message_body_md5 = entry.message_body_md5
+            msg.message_group_id = entry.message_group_id
             msg_list.append(msg)
         return msg_list
 
@@ -505,6 +507,7 @@ class Queue:
         msg = self.__peek_resp2msg__(resp)
         msg.receipt_handle = resp.receipt_handle
         msg.next_visible_time = resp.next_visible_time
+        msg.message_group_id = resp.message_group_id
         return msg
 
     def __batchrecv_resp2msg__(self, resp):
@@ -520,6 +523,7 @@ class Queue:
             msg.priority = entry.priority
             msg.next_visible_time = entry.next_visible_time
             msg.receipt_handle = entry.receipt_handle
+            msg.message_group_id = entry.message_group_id
             # 处理属性
             if hasattr(entry, 'user_properties'):
                 msg.set_user_properties(entry.user_properties)
@@ -619,7 +623,7 @@ class QueueMeta:
 
     def set_logging_enabled(self, logging_enabled):
         self.logging_enabled = logging_enabled
-
+    
     def __str__(self):
         meta_info = {"VisibilityTimeout": self.visibility_timeout,
                      "MaximumMessageSize": self.maximum_message_size,
@@ -637,13 +641,14 @@ class QueueMeta:
 
 
 class Message:
-    def __init__(self, message_body = None, delay_seconds = None, priority = None):
+    def __init__(self, message_body = None, delay_seconds = None, priority = None, message_group_id = ""):
         """ 消息属性
 
             @note: send_message 指定属性
             :: message_body         消息体 
             :: delay_seconds        消息延迟时间
             :: priority             消息优先级
+            :: messageGroupId       消息组ID，FIFO队列使用
             :: user_properties     用户自定义属性，Map<String, MessagePropertyValue>
             :: system_properties   系统属性，Map<SystemPropertyName, MessageSystemPropertyValue>
 
@@ -684,6 +689,7 @@ class Message:
 
         self.receipt_handle = ""
         self.next_visible_time = 1
+        self.message_group_id = message_group_id
 
     def set_delayseconds(self, delay_seconds):
         self.delay_seconds = delay_seconds
@@ -724,6 +730,13 @@ class Message:
             raise ValueError("Invalid system property name: %s. Valid names are: %s" % (name, SystemPropertyName.values()))
         self.system_properties[name] = property_value
 
+    def set_message_group_id(self, message_group_id):
+        """ 设置消息组ID，仅FIFO队列使用
+
+            @type message_group_id: string
+            @param message_group_id: 消息组ID
+        """
+        self.message_group_id = message_group_id
     def _set_system_properties(self, system_properties):
         """内部方法：设置系统属性，仅用于接收消息时的反序列化"""
         if system_properties is not None:

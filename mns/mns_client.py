@@ -247,7 +247,7 @@ class MNSClient(object):
         resp.header = resp_inter.header
         self.check_status(req_inter, resp_inter, resp)
         if resp.error_data == "":
-            resp.message_id, resp.message_body_md5, resp.receipt_handle = SendMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
+            resp.message_id, resp.message_body_md5, resp.receipt_handle, resp.message_group_id = SendMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
             if self.logger:
                 self.logger.info("SendMessage RequestId:%s QueueName:%s Priority:%s DelaySeconds:%s MessageId:%s MessageBodyMD5:%s" % \
                     (resp.get_requestid(), req.queue_name, req.priority, \
@@ -578,7 +578,7 @@ class MNSClient(object):
         resp.header = resp_inter.header
         self.check_status(req_inter, resp_inter, resp)
         if resp.error_data == "":
-            resp.message_id, resp.message_body_md5 = PublishMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
+            resp.message_id, resp.message_body_md5, resp.message_group_id = PublishMessageDecoder.decode(resp_inter.data, req_inter.get_req_id())
             if self.logger:
                 self.logger.info("PublishMessage RequestId:%s TopicName:%s MessageId:%s MessageBodyMD5:%s" % \
                     (resp.get_requestid(), req.topic_name, resp.message_id, resp.message_body_md5))
@@ -798,6 +798,7 @@ class MNSClient(object):
         resp.next_visible_time = int(data["NextVisibleTime"])
         resp.receipt_handle = data["ReceiptHandle"]
         resp.priority = int(data["Priority"])
+        resp.message_group_id = data.get("MessageGroupId", "")
         # 处理属性
         if "UserProperties" in data:
             resp.user_properties = data["UserProperties"]
