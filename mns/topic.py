@@ -20,7 +20,7 @@ except ImportError:
     import simplejson as json
 
 class Topic:
-    def __init__(self, topic_name, mns_client: MNSClient, debug=False):
+    def __init__(self, topic_name, mns_client, debug=False):
         self.topic_name = topic_name
         self.mns_client = mns_client
         self.debug = debug

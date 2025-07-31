@@ -15,7 +15,7 @@ from .mns_client import MNSClient
 from .message_property import MessagePropertyValue, PropertyType, MessageSystemPropertyValue, SystemPropertyName
 
 class Queue:
-    def __init__(self, queue_name, mns_client: MNSClient, debug=False):
+    def __init__(self, queue_name, mns_client, debug=False):
         self.queue_name = queue_name
         self.mns_client = mns_client
         self.set_encoding(True)
