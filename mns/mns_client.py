@@ -744,7 +744,7 @@ class MNSClient(object):
                                          (pkg_info.version, platform.system(), platform.release(), platform.machine(), platform.python_version())
         credential = self.credentials_provider.get_credentials()
         req_inter.header["Authorization"] = self.get_signature(req_inter.method, req_inter.header, req_inter.uri, credential)
-        if credential.get_security_token() != "":
+        if credential.get_security_token():
             req_inter.header["security-token"] = credential.get_security_token()
 
     def get_signature(self, method, headers, resource, credential):
